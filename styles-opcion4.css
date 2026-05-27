@@ -1,0 +1,65 @@
+/* Opción 4 - Pastel Suave */
+.gantt-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+.gantt-table thead th {
+    background: #E8EAF6;
+    color: #3F51B5;
+    padding: 6px 4px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    border: none;
+    border-bottom: 2px solid #C5CAE9;
+}
+
+.gantt-table .col-recinto {
+    background: #FAFAFA;
+    border-right: 1px solid #E0E0E0;
+    font-weight: 500;
+    color: #5C6BC0;
+}
+
+.gantt-table tbody tr:nth-child(odd) td {
+    background: #F8F9FF;
+}
+
+.gantt-table tbody tr:nth-child(even) td {
+    background: #FFF8F8;
+}
+
+.linea-row td:first-child {
+    background: #E8F5E9 !important;
+    border-bottom: 2px solid #A5D6A7;
+    font-weight: 600;
+    color: #2E7D32;
+}
+
+.gantt-bar-chevron {
+    height: 24px;
+    clip-path: polygon(0% 0%, calc(100% - 8px) 0%, 100% 50%, calc(100% - 8px) 100%, 0% 100%);
+    font-weight: 500;
+    font-size: 0.7rem;
+    border-radius: 2px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Colores pastel */
+.gantt-bar-chevron[style*="42A5F5"] { background: #BBDEFB !important; color: #1565C0 !important; }
+.gantt-bar-chevron[style*="FFA726"] { background: #FFE0B2 !important; color: #E65100 !important; }
+.gantt-bar-chevron[style*="66BB6A"] { background: #C8E6C9 !important; color: #2E7D32 !important; }
+.gantt-bar-chevron[style*="EF5350"] { background: #FFCDD2 !important; color: #C62828 !important; }
+
+.today-line {
+    background: #EC407A;
+    width: 2px;
+}
+
+.today-line::before {
+    background: #EC407A;
+    font-size: 0.6rem;
+    padding: 2px 6px;
+    border-radius: 10px;
+}
