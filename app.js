@@ -5,15 +5,6 @@ const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=
 let todasLasOTs = [];
 let lineasUnicas = [];
 
-function resetFiltros() {
-    document.getElementById('filterLinea').value = '';
-    document.getElementById('filterEstado').value = '';
-    document.getElementById('filterITO').value = '';
-    document.getElementById('filterRecinto').value = '';
-    document.getElementById('searchInput').value = '';
-    if (typeof renderizarGantt === 'function') renderizarGantt();
-}
-
 async function cargarDatos() {
     const loadingSpinner = document.getElementById('loadingSpinner');
     const errorMessage = document.getElementById('errorMessage');
@@ -161,7 +152,6 @@ function resetFiltros() {
     if (typeof renderizarGantt === 'function') renderizarGantt();
 }
 
-// Event listeners
 document.getElementById('searchInput').addEventListener('input', function() {
     if (typeof renderizarGantt === 'function') renderizarGantt();
 });
