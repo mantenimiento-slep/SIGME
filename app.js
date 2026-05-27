@@ -22,12 +22,21 @@ async function cargarDatos() {
         if (!response.ok) throw new Error('Error al cargar datos de Google Sheets');
         
         const csvText = await response.text();
+        console.log('CSV recibido (primeras líneas):', csvText.substring(0, 500)); // Para debug
+        
         const datos = parseCSV(csvText);
+        console.log('Datos parseados:', datos.length, 'filas');
+        console.log('Primera fila de datos:', datos[0]); // Para verificar estructura
+        console.log('Encabezados encontrados:', Object.keys(datos[0])); // Columnas reales
         
         if (datos.length === 0) throw new Error('No se encontraron datos en la hoja');
         
         todasLasOTs = procesarDatos(datos);
+        console.log('OTs procesadas:', todasLasOTs.length);
+        console.log('Ejemplo OT:', todasLasOTs[0]);
+        
         lineasUnicas = [...new Set(todasLasOTs.map(ot => ot.lineaTrabajo))].filter(Boolean);
+        console.log('Líneas de trabajo únicas:', lineasUnicas);
         
         actualizarEstadisticas();
         llenarFiltros();
@@ -39,25 +48,31 @@ async function cargarDatos() {
     } catch (error) {
         loadingSpinner.style.display = 'none';
         errorMessage.style.display = 'block';
-        document.getElementById('errorText').textContent = error.message;
-        console.error('Error:', error);
+        document.getElementById('errorText').textContent = 'Error: ' + error.message + '. Abre la consola (F12) para más detalles.';
+        console.error('Error detallado:', error);
     }
 }
 
-// Parsear CSV
+// Parsear CSV mejorado
 function parseCSV(csvText) {
-    const lineas = csvText.split('\n');
-    const headers = lineas[0].split(',').map(h => h.trim().replace(/"/g, ''));
+    const lineas = csvText.split('\n').filter(linea => linea.trim());
+    if (lineas.length < 2) return [];
+    
+    const headers = parsearLineaCSV(lineas[0]);
+    console.log('Headers encontrados:', headers);
     
     const datos = [];
     for (let i = 1; i < lineas.length; i++) {
-        if (!lineas[i].trim()) continue;
-        
         const valores = parsearLineaCSV(lineas[i]);
         const fila = {};
+        
         headers.forEach((header, index) => {
-            fila[header] = valores[index] ? valores[index].trim().replace(/"/g, '') : '';
+            // Limpiar el header: quitar comillas, espacios extras, normalizar
+            const headerLimpio = header.trim().replace(/"/g, '');
+            const valor = valores[index] ? valores[index].trim().replace(/"/g, '') : '';
+            fila[headerLimpio] = valor;
         });
+        
         datos.push(fila);
     }
     
@@ -74,40 +89,62 @@ function parsearLineaCSV(linea) {
         if (char === '"') {
             entreComillas = !entreComillas;
         } else if (char === ',' && !entreComillas) {
-            resultado.push(actual);
+            resultado.push(actual.trim());
             actual = '';
         } else {
             actual += char;
         }
     }
-    resultado.push(actual);
+    resultado.push(actual.trim());
     return resultado;
 }
 
-// Procesar datos
+// Procesar datos con mapeo flexible
 function procesarDatos(datos) {
-    return datos.map(fila => ({
-        numeroOT: fila['N° OT'] || '',
-        ito: fila['ITO'] || '',
-        nombreRecinto: fila['Nombre Recinto'] || '',
-        tipoRecinto: fila['Tipo Recinto'] || '',
-        tipoIntervencion: fila['Tipo Intervención'] || '',
-        fechaVisita: fila['Fecha Visita'] || '',
-        estado: fila['Estado'] || 'Sin estado',
-        presupuesto: fila['Presupuesto'] || '0',
-        plazoProyectado: fila['Plazo Proyectado'] || '',
-        lineaTrabajo: fila['Línea de Trabajo'] || 'Sin línea',
-        fechaInicio: fila['Fecha Inicio'] || '',
-        fechaFin: fila['Fecha Fin'] || '',
-        numeroEP: fila['N° EP'] || ''
-    }));
+    return datos.map((fila, index) => {
+        // Función helper para buscar valor por posible nombre de columna
+        const obtenerValor = (posiblesNombres) => {
+            for (let nombre of posiblesNombres) {
+                if (fila[nombre] !== undefined) return fila[nombre];
+                // Buscar también sin acentos
+                const nombreSinAcentos = nombre.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                for (let key in fila) {
+                    if (key.normalize('NFD').replace(/[\u0300-\u036f]/g, '') === nombreSinAcentos) {
+                        return fila[key];
+                    }
+                }
+            }
+            return '';
+        };
+        
+        const ot = {
+            numeroOT: obtenerValor(['N° OT', 'Nº OT', 'Nro OT', 'OT', 'Numero OT', 'Número OT']),
+            ito: obtenerValor(['ITO', 'Inspector Técnico de Obras']),
+            nombreRecinto: obtenerValor(['Nombre Recinto', 'Recinto', 'Establecimiento', 'Nombre Establecimiento']),
+            tipoRecinto: obtenerValor(['Tipo Recinto', 'Tipo Establecimiento']),
+            tipoIntervencion: obtenerValor(['Tipo Intervención', 'Tipo Intervencion', 'Intervención', 'Intervencion', 'Tipo de Intervención']),
+            fechaVisita: obtenerValor(['Fecha Visita', 'Fecha de Visita']),
+            estado: obtenerValor(['Estado']),
+            presupuesto: obtenerValor(['Presupuesto', 'Monto', 'Presupuesto Asignado']),
+            plazoProyectado: obtenerValor(['Plazo Proyectado', 'Plazo']),
+            lineaTrabajo: obtenerValor(['Línea de Trabajo', 'Linea de Trabajo', 'Línea', 'Linea']),
+            fechaInicio: obtenerValor(['Fecha Inicio', 'Fecha de Inicio']),
+            fechaFin: obtenerValor(['Fecha Fin', 'Fecha de Fin', 'Fecha Término', 'Fecha Termino']),
+            numeroEP: obtenerValor(['N° EP', 'Nº EP', 'EP', 'Estado de Pago', 'Numero EP'])
+        };
+        
+        // Si no encuentra el número de OT, usar el índice
+        if (!ot.numeroOT && fila['N° OT']) ot.numeroOT = fila['N° OT'];
+        
+        return ot;
+    });
 }
 
 // Actualizar estadísticas del header
 function actualizarEstadisticas() {
     document.getElementById('totalOT').innerHTML = `<i class="fas fa-clipboard-list"></i> ${todasLasOTs.length} OT`;
     
-    const recintosUnicos = new Set(todasLasOTs.map(ot => ot.nombreRecinto));
+    const recintosUnicos = new Set(todasLasOTs.map(ot => ot.nombreRecinto).filter(Boolean));
     document.getElementById('totalRecintos').innerHTML = `<i class="fas fa-school"></i> ${recintosUnicos.size} EE`;
 }
 
@@ -118,15 +155,19 @@ function llenarFiltros() {
     const filterTipo = document.getElementById('filterTipo');
     
     // Líneas de trabajo
+    filterLinea.innerHTML = '<option value="">Todas las líneas de trabajo</option>';
     lineasUnicas.sort().forEach(linea => {
-        const option = document.createElement('option');
-        option.value = linea;
-        option.textContent = linea;
-        filterLinea.appendChild(option);
+        if (linea) {
+            const option = document.createElement('option');
+            option.value = linea;
+            option.textContent = linea;
+            filterLinea.appendChild(option);
+        }
     });
     
     // Estados
-    const estadosUnicos = [...new Set(todasLasOTs.map(ot => ot.estado))].sort();
+    filterEstado.innerHTML = '<option value="">Todos los estados</option>';
+    const estadosUnicos = [...new Set(todasLasOTs.map(ot => ot.estado).filter(Boolean))].sort();
     estadosUnicos.forEach(estado => {
         const option = document.createElement('option');
         option.value = estado;
@@ -135,7 +176,8 @@ function llenarFiltros() {
     });
     
     // Tipos de intervención
-    const tiposUnicos = [...new Set(todasLasOTs.map(ot => ot.tipoIntervencion))].sort();
+    filterTipo.innerHTML = '<option value="">Todos los tipos de intervención</option>';
+    const tiposUnicos = [...new Set(todasLasOTs.map(ot => ot.tipoIntervencion).filter(Boolean))].sort();
     tiposUnicos.forEach(tipo => {
         const option = document.createElement('option');
         option.value = tipo;
@@ -155,9 +197,9 @@ function renderizarDashboard() {
     // Filtrar OTs
     let otsFiltradas = todasLasOTs.filter(ot => {
         const matchSearch = !searchTerm || 
-            ot.nombreRecinto.toLowerCase().includes(searchTerm) ||
-            ot.ito.toLowerCase().includes(searchTerm) ||
-            ot.numeroOT.toLowerCase().includes(searchTerm);
+            (ot.nombreRecinto && ot.nombreRecinto.toLowerCase().includes(searchTerm)) ||
+            (ot.ito && ot.ito.toLowerCase().includes(searchTerm)) ||
+            (ot.numeroOT && ot.numeroOT.toLowerCase().includes(searchTerm));
         const matchLinea = !lineaFiltro || ot.lineaTrabajo === lineaFiltro;
         const matchEstado = !estadoFiltro || ot.estado === estadoFiltro;
         const matchTipo = !tipoFiltro || ot.tipoIntervencion === tipoFiltro;
@@ -166,17 +208,23 @@ function renderizarDashboard() {
     });
     
     // Agrupar por línea de trabajo
-    const lineasAMostrar = lineaFiltro ? [lineaFiltro] : lineasUnicas;
+    const lineasAMostrar = lineaFiltro ? [lineaFiltro] : lineasUnicas.filter(Boolean);
     
     dashboard.innerHTML = '';
     
-    lineasAMostrar.forEach(linea => {
-        const otsDeLinea = otsFiltradas.filter(ot => ot.lineaTrabajo === linea);
-        if (otsDeLinea.length === 0) return;
-        
-        const lineaSection = crearLineaSection(linea, otsDeLinea);
-        dashboard.appendChild(lineaSection);
-    });
+    if (lineasAMostrar.length === 0) {
+        dashboard.innerHTML = '<div class="linea-section"><div class="ots-grid">' + 
+            otsFiltradas.map(ot => crearOTCard(ot)).join('') + 
+            '</div></div>';
+    } else {
+        lineasAMostrar.forEach(linea => {
+            const otsDeLinea = otsFiltradas.filter(ot => ot.lineaTrabajo === linea);
+            if (otsDeLinea.length === 0) return;
+            
+            const lineaSection = crearLineaSection(linea, otsDeLinea);
+            dashboard.appendChild(lineaSection);
+        });
+    }
     
     if (dashboard.innerHTML === '') {
         dashboard.innerHTML = '<div class="error"><i class="fas fa-search"></i><p>No se encontraron resultados con los filtros actuales</p></div>';
@@ -188,20 +236,20 @@ function crearLineaSection(linea, ots) {
     const section = document.createElement('div');
     section.className = 'linea-section';
     
-    const recintosUnicos = new Set(ots.map(ot => ot.nombreRecinto));
+    const recintosUnicos = new Set(ots.map(ot => ot.nombreRecinto).filter(Boolean));
     const presupuestoTotal = ots.reduce((sum, ot) => {
-        const presupuesto = parseFloat(ot.presupuesto.replace(/[^0-9.-]+/g, '')) || 0;
+        const presupuesto = parseFloat(String(ot.presupuesto).replace(/[^0-9.-]+/g, '')) || 0;
         return sum + presupuesto;
     }, 0);
     
     // Calcular progreso
-    const completadas = ots.filter(ot => ot.estado.toLowerCase().includes('complet')).length;
+    const completadas = ots.filter(ot => ot.estado && ot.estado.toLowerCase().includes('complet')).length;
     const progreso = ots.length > 0 ? Math.round((completadas / ots.length) * 100) : 0;
     
     section.innerHTML = `
-        <div class="linea-header" onclick="toggleLinea(this)">
+        <div class="linea-header">
             <div>
-                <h2><i class="fas fa-layer-group"></i> ${linea}</h2>
+                <h2><i class="fas fa-layer-group"></i> ${linea || 'Sin línea asignada'}</h2>
                 <div class="linea-stats">
                     <span><i class="fas fa-clipboard-list"></i> ${ots.length} OT</span>
                     <span><i class="fas fa-school"></i> ${recintosUnicos.size} EE</span>
@@ -225,33 +273,33 @@ function crearLineaSection(linea, ots) {
 
 // Crear tarjeta de OT
 function crearOTCard(ot) {
-    const estadoClass = `estado-${ot.estado.toLowerCase().replace(/\s+/g, '-')}`;
-    const presupuesto = parseFloat(ot.presupuesto.replace(/[^0-9.-]+/g, '')) || 0;
+    const estadoClass = `estado-${(ot.estado || 'sin-estado').toLowerCase().replace(/\s+/g, '-')}`;
+    const presupuesto = parseFloat(String(ot.presupuesto).replace(/[^0-9.-]+/g, '')) || 0;
     
     return `
         <div class="ot-card">
             <div class="ot-header">
-                <span class="ot-number">OT #${ot.numeroOT}</span>
-                <span class="estado-badge ${estadoClass}">${ot.estado}</span>
+                <span class="ot-number">${ot.numeroOT ? 'OT #' + ot.numeroOT : 'Sin N° OT'}</span>
+                <span class="estado-badge ${estadoClass}">${ot.estado || 'Sin estado'}</span>
             </div>
             
             <div class="ot-recinto">
                 <i class="fas fa-school"></i>
-                ${ot.nombreRecinto}
+                ${ot.nombreRecinto || 'Sin nombre de recinto'}
             </div>
             
             <div class="ot-details">
                 <div class="ot-detail">
                     <i class="fas fa-user-tie"></i>
-                    <span>ITO: ${ot.ito}</span>
+                    <span>ITO: ${ot.ito || 'No asignado'}</span>
                 </div>
                 <div class="ot-detail">
                     <i class="fas fa-building"></i>
-                    <span>${ot.tipoRecinto}</span>
+                    <span>${ot.tipoRecinto || 'Sin tipo'}</span>
                 </div>
                 <div class="ot-detail">
                     <i class="fas fa-tools"></i>
-                    <span>${ot.tipoIntervencion}</span>
+                    <span>${ot.tipoIntervencion || 'Sin tipo'}</span>
                 </div>
                 <div class="ot-detail">
                     <i class="fas fa-calendar-alt"></i>
@@ -277,41 +325,19 @@ function crearOTCard(ot) {
                     EP: ${ot.numeroEP || 'N/A'}
                 </span>
             </div>
-            
-            <div class="progress-bar">
-                <div class="progress-fill" style="width: ${calcularProgresoOT(ot.estado)}%"></div>
-            </div>
         </div>
     `;
 }
 
-// Calcular progreso basado en estado
-function calcularProgresoOT(estado) {
-    const estadoLower = estado.toLowerCase();
-    if (estadoLower.includes('complet')) return 100;
-    if (estadoLower.includes('proceso') || estadoLower.includes('ejecución')) return 50;
-    if (estadoLower.includes('inicio') || estadoLower.includes('program')) return 25;
-    return 0;
-}
-
 // Formatear presupuesto
 function formatearPresupuesto(monto) {
+    if (!monto || monto === 0) return '$0';
     return new Intl.NumberFormat('es-CL', {
         style: 'currency',
         currency: 'CLP',
         minimumFractionDigits: 0,
         maximumFractionDigits: 0
     }).format(monto);
-}
-
-// Toggle línea
-function toggleLinea(header) {
-    const grid = header.nextElementSibling;
-    if (grid.style.display === 'none') {
-        grid.style.display = 'grid';
-    } else {
-        grid.style.display = 'none';
-    }
 }
 
 // Event listeners
