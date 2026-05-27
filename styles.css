@@ -592,3 +592,63 @@ body {
     display: grid;
     gap: 1.5rem;
 }
+/* Estilos mejorados para las barras del Gantt */
+.bar-label {
+    font-weight: 600;
+    margin-right: 8px;
+    font-size: 0.75rem;
+}
+
+.bar-recinto {
+    font-size: 0.7rem;
+    opacity: 0.9;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.gantt-bar {
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    font-size: 0.75rem;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    min-width: 4px;
+    border-radius: 4px;
+    height: 28px;
+    line-height: 28px;
+}
+
+.gantt-bar:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    z-index: 100;
+    height: auto;
+    min-height: 28px;
+}
+
+.gantt-bar.programada { background: #1a73e8; }
+.gantt-bar.en-proceso { background: #f4b400; color: #333; }
+.gantt-bar.completada { background: #0f9d58; }
+.gantt-bar.cancelada { background: #db4437; }
+.gantt-bar.sin-estado { background: #9e9e9e; }
+
+.linea-row td {
+    vertical-align: top;
+}
+
+/* Mejorar visibilidad de las filas */
+.gantt-table tbody tr:hover td {
+    background-color: #f8faff !important;
+}
+
+/* Tooltip nativo mejorado */
+.gantt-bar[title] {
+    position: relative;
+}
