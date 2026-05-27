@@ -1,0 +1,54 @@
+/* Opción 1 - Corporativo Clásico */
+.gantt-table {
+    border-collapse: collapse;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+.gantt-table thead th {
+    background: #1557B0;
+    color: white;
+    padding: 6px 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    border: 1px solid #0D47A1;
+}
+
+.gantt-table .col-recinto {
+    background: white;
+    border-right: 2px solid #1557B0;
+    font-weight: 600;
+    color: #1557B0;
+}
+
+.gantt-table tbody tr:nth-child(odd) td {
+    background: #F5F5F5;
+}
+
+.gantt-table tbody tr:nth-child(even) td {
+    background: white;
+}
+
+.linea-row td:first-child {
+    background: linear-gradient(135deg, #E8EAF6, #C5CAE9) !important;
+    border-bottom: 2px solid #3F51B5;
+}
+
+.gantt-bar-chevron {
+    height: 26px;
+    clip-path: polygon(0% 0%, calc(100% - 8px) 0%, 100% 50%, calc(100% - 8px) 100%, 0% 100%);
+    font-weight: 500;
+    font-size: 0.72rem;
+    letter-spacing: 0.3px;
+}
+
+.today-line {
+    background: #D32F2F;
+    width: 2px;
+}
+
+.today-line::before {
+    background: #D32F2F;
+    font-size: 0.65rem;
+    padding: 2px 6px;
+    border-radius: 3px;
+}
