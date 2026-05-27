@@ -73,7 +73,6 @@ function asignarNiveles(ots, fechaInicioPeriodo, fechaFinPeriodo, totalDias) {
         const fin = parsearFecha(ot.fechaFin);
         if (!inicio || !fin) return null;
         
-        // Recortar al período visible
         const inicioVisible = inicio < fechaInicioPeriodo ? fechaInicioPeriodo : inicio;
         const finVisible = fin > fechaFinPeriodo ? fechaFinPeriodo : fin;
         
@@ -147,7 +146,6 @@ function renderizarGantt() {
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
     
-    // Período: 6 semanas atrás + 8 semanas adelante
     const fechaInicio = new Date(hoy);
     fechaInicio.setDate(fechaInicio.getDate() - 42);
     
@@ -165,7 +163,6 @@ function renderizarGantt() {
         const fin = parsearFecha(ot.fechaFin);
         if (!inicio || !fin) return false;
         
-        // CORRECCIÓN: Usar OR en lugar de AND
         if (fin < fechaInicio || inicio > fechaFin) return false;
         
         const matchSearch = !searchTerm || 
@@ -213,11 +210,13 @@ function renderizarGantt() {
         grupos[linea].push(ot);
     });
     
-    let html = '<div style="overflow: auto; position: relative; height: 100%;" id="ganttScrollContainer">';
-    html += `<div style="padding: 6px 12px; background: #e8f5e9; font-size: 0.8rem; margin-bottom: 4px; border-radius: 4px; position: sticky; top: 0; z-index: 20;">
+    // Info del período
+    let html = '<div style="height: 100%; display: flex; flex-direction: column;">';
+    html += `<div style="padding: 6px 12px; background: #e8f5e9; font-size: 0.8rem; flex-shrink: 0; border-radius: 4px; margin: 4px;">
         📅 <strong>${formatearFecha(fechaInicio)}</strong> → <strong>${formatearFecha(fechaFin)}</strong> | ${otsFiltradas.length} OT
     </div>`;
     
+    html += '<div style="flex: 1; overflow: auto; position: relative;">';
     html += '<table class="gantt-table"><thead><tr><th class="col-recinto" style="width: 180px;">Línea de Trabajo</th>';
     
     const meses = {};
@@ -336,31 +335,29 @@ function renderizarGantt() {
     
     html += '</tbody></table>';
     
-    // Línea HOY
+    // Línea HOY - CORREGIDA
     const hoyOffset = (hoy - fechaInicio) / (1000 * 60 * 60 * 24);
     const hoyPercent = Math.max(0, Math.min(100, (hoyOffset / totalDias) * 100));
     
+    if (hoy >= fechaInicio && hoy <= fechaFin) {
+        html += `<div class="today-line" style="left: ${hoyPercent}%;"></div>`;
+    }
+    
+    html += '</div></div>';
+    
     ganttChart.innerHTML = html;
     
-    // Agregar línea HOY después de renderizar
-    const container = document.getElementById('ganttScrollContainer');
-    if (container) {
-        const todayLine = document.createElement('div');
-        todayLine.className = 'today-line';
-        todayLine.style.cssText = `left: ${hoyPercent}%; position: sticky; top: 0; height: 100%;`;
-        todayLine.innerHTML = 'HOY';
-        // Insertar después de la tabla
-        container.appendChild(todayLine);
-        
-        // Centrar en HOY
-        setTimeout(() => {
-            const tablaAncho = container.querySelector('table')?.offsetWidth || 0;
-            if (tablaAncho > 0) {
-                const hoyPosition = (hoyPercent / 100) * tablaAncho;
+    // Centrar en HOY
+    setTimeout(() => {
+        const container = ganttChart.querySelector('div[style*="overflow: auto"]');
+        if (container) {
+            const tabla = container.querySelector('table');
+            if (tabla) {
+                const hoyPosition = (hoyPercent / 100) * tabla.offsetWidth;
                 container.scrollLeft = hoyPosition - (container.clientWidth / 3);
             }
-        }, 100);
-    }
+        }
+    }, 100);
     
     inicializarTooltips();
 }
@@ -408,7 +405,7 @@ function zoomGantt(direction) {
 }
 
 function scrollGantt(direction) {
-    const container = document.getElementById('ganttScrollContainer');
+    const container = document.querySelector('#ganttChart div[style*="overflow: auto"]');
     if (!container) return;
     
     const scrollAmount = 400;
