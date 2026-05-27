@@ -54,6 +54,26 @@ function parsearFecha(fechaStr) {
     return null;
 }
 
+// Determinar estado según número de estado
+function getEstadoCategoria(estado) {
+    if (!estado) return 'sin-estado';
+    
+    // Extraer el número del estado (ej: "1. OT Programada" -> 1)
+    const match = estado.match(/^(\d+)/);
+    const numero = match ? parseInt(match[1]) : 0;
+    
+    if (numero >= 1 && numero <= 7) return 'programada';
+    if (numero === 8) return 'en-proceso';
+    if (numero === 9 || numero === 10) return 'finalizada';
+    
+    const estadoLower = estado.toLowerCase();
+    if (estadoLower.includes('programada')) return 'programada';
+    if (estadoLower.includes('proceso') || estadoLower.includes('ejecución')) return 'en-proceso';
+    if (estadoLower.includes('finalizada') || estadoLower.includes('completada') || estadoLower.includes('recepción conforme')) return 'finalizada';
+    
+    return 'sin-estado';
+}
+
 function codigoDia(fecha) {
     const codigos = ['D', 'L', 'M', 'W', 'J', 'V', 'S'];
     return codigos[fecha.getDay()];
@@ -68,36 +88,6 @@ function diasHabiles(fechaInicio, fechaFin) {
         inicio.setDate(inicio.getDate() + 1);
     }
     return dias;
-}
-
-// COLORES POR LÍNEA - Como en el dashboard de referencia
-function getLineaColor(linea) {
-    const colores = {
-        'Línea 1': '#BBDEFB',  // Azul claro
-        'Línea 2': '#C8E6C9',  // Verde claro
-        'Línea 3': '#FFE0B2',  // Naranja claro
-        'Línea 4': '#E1BEE7',  // Morado claro
-        'Línea 5': '#B2EBF2',  // Cyan claro
-        'Línea 6': '#FFF9C4',  // Amarillo claro
-        'Línea 7': '#DCEDC8',  // Verde lima claro
-        'Línea 8': '#FFCDD2',  // Rojo claro
-        'Línea Extra': '#F5F5F5', // Gris claro
-    };
-    return colores[linea] || '#FAFAFA';
-}
-
-function getLineaTextoColor(linea) {
-    const colores = {
-        'Línea 1': '#1565C0',
-        'Línea 2': '#2E7D32',
-        'Línea 3': '#E65100',
-        'Línea 4': '#6A1B9A',
-        'Línea 5': '#00838F',
-        'Línea 6': '#F9A825',
-        'Línea 7': '#558B2F',
-        'Línea 8': '#C62828',
-    };
-    return colores[linea] || '#455A64';
 }
 
 function asignarNiveles(ots, fechaInicioPeriodo, fechaFinPeriodo, totalDias) {
@@ -191,7 +181,6 @@ function renderizarGantt() {
     
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
     const lineaFiltro = document.getElementById('filterLinea').value;
-    const estadoFiltro = document.getElementById('filterEstado').value;
     const recintoSearch = document.getElementById('filterRecinto') ? document.getElementById('filterRecinto').value.toLowerCase() : '';
     itoFiltro = document.getElementById('filterITO') ? document.getElementById('filterITO').value : null;
     
@@ -206,30 +195,27 @@ function renderizarGantt() {
             ot.ito.toLowerCase().includes(searchTerm) ||
             ot.numeroOT.toLowerCase().includes(searchTerm);
         const matchLineaFiltro = !lineaFiltro || ot.lineaTrabajo === lineaFiltro;
-        const matchEstado = !estadoFiltro || ot.estado === estadoFiltro;
         const matchRecinto = !recintoSearch || ot.nombreRecinto.toLowerCase().includes(recintoSearch);
         const matchITO = !itoFiltro || ot.ito === itoFiltro;
         
-        return matchSearch && matchLineaFiltro && matchEstado && matchRecinto && matchITO;
+        return matchSearch && matchLineaFiltro && matchRecinto && matchITO;
     });
     
     if (otsFiltradas.length === 0) {
-        ganttChart.innerHTML = '<div class="error"><p>No se encontraron OTs</p></div>';
+        ganttChart.innerHTML = '<div class="error"><p>No se encontraron Órdenes de Trabajo en el período</p></div>';
         return;
     }
     
-    // Ordenar: Línea 1 a 8, luego Línea Extra, luego Sin línea
+    // Ordenar por línea
     const ordenLineas = ['Línea 1','Línea 2','Línea 3','Línea 4','Línea 5','Línea 6','Línea 7','Línea 8'];
     otsFiltradas.sort((a, b) => {
-        const lineaA = a.lineaTrabajo || 'ZZZ Sin línea';
-        const lineaB = b.lineaTrabajo || 'ZZZ Sin línea';
+        const lineaA = a.lineaTrabajo || 'ZZZ';
+        const lineaB = b.lineaTrabajo || 'ZZZ';
         const idxA = ordenLineas.indexOf(lineaA);
         const idxB = ordenLineas.indexOf(lineaB);
         if (idxA !== -1 && idxB !== -1) return idxA - idxB;
         if (idxA !== -1) return -1;
         if (idxB !== -1) return 1;
-        if (lineaA === 'Línea Extra' && lineaB !== 'Línea Extra') return 1;
-        if (lineaB === 'Línea Extra' && lineaA !== 'Línea Extra') return -1;
         return lineaA.localeCompare(lineaB);
     });
     
@@ -254,23 +240,31 @@ function renderizarGantt() {
     ordenLineas.forEach(linea => {
         if (grupos[linea]) gruposOrdenados[linea] = grupos[linea];
     });
-    if (grupos['Línea Extra']) gruposOrdenados['Línea Extra'] = grupos['Línea Extra'];
-    // Agregar el resto
     Object.keys(grupos).forEach(key => {
         if (!gruposOrdenados[key]) gruposOrdenados[key] = grupos[key];
     });
     
-    // Fecha y hora de actualización
     const ahora = ultimaActualizacion || new Date();
     const fechaStr = ahora.toLocaleDateString('es-CL');
     const horaStr = ahora.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
     
     let html = '<div style="height:100%;display:flex;flex-direction:column;">';
     
-    // Barra de información superior
-    html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 12px;background:#e8f5e9;font-size:0.8rem;flex-shrink:0;border-radius:4px;margin:3px;">';
-    html += '<span><strong>Período:</strong> <strong>' + formatearFecha(fechaInicio) + '</strong> → <strong>' + formatearFecha(fechaFin) + '</strong> | ' + otsFiltradas.length + ' OT</span>';
-    html += '<span style="font-size:0.7rem;color:#666;">Actualización: ' + fechaStr + ' | ' + horaStr + '</span>';
+    // Barra superior de información
+    html += '<div style="padding:6px 12px;background:#e8f5e9;flex-shrink:0;border-radius:4px;margin:3px;">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;">';
+    html += '<div>';
+    html += '<strong>Período: ' + formatearFecha(fechaInicio) + ' → ' + formatearFecha(fechaFin) + '</strong><br>';
+    html += '<span style="font-size:0.75rem;">' + otsFiltradas.length + ' Órdenes de Trabajo</span>';
+    html += '</div>';
+    html += '<div style="text-align:right;">';
+    html += '<div style="font-size:0.7rem;color:#666;">Actualización: ' + fechaStr + ' | ' + horaStr + '</div>';
+    html += '<div style="display:flex;gap:8px;font-size:0.65rem;margin-top:4px;justify-content:flex-end;">';
+    html += '<span style="background:#FFE0B2;color:#E65100;padding:1px 6px;border-radius:3px;">Vacaciones</span>';
+    html += '<span style="background:#FFCDD2;color:#B71C1C;padding:1px 6px;border-radius:3px;">Feriados</span>';
+    html += '</div>';
+    html += '</div>';
+    html += '</div>';
     html += '</div>';
     
     // Contenedor con scroll
@@ -313,32 +307,26 @@ function renderizarGantt() {
         const totalRecintos = new Set(ots.map(ot => ot.nombreRecinto)).size;
         const barrasConNiveles = asignarNiveles(ots, fechaInicio, fechaFin, totalDias);
         const alturaFila = Math.max(barrasConNiveles[0] ? barrasConNiveles[0].alturaFila : 50, 50);
-        const bgColor = getLineaColor(linea);
-        const textColor = getLineaTextoColor(linea);
         
-        html += '<tr class="linea-row"><td class="col-recinto" style="background:' + bgColor + ';font-weight:600;color:' + textColor + ';border-bottom:2px solid #B0BEC5;padding:6px 8px;vertical-align:top;font-size:0.72rem;">' +
+        html += '<tr class="linea-row"><td class="col-recinto" style="font-weight:600;color:#1A237E;border-bottom:2px solid #B0BEC5;padding:6px 8px;vertical-align:top;font-size:0.72rem;">' +
             '<div style="margin-bottom:1px;"><i class="fas fa-layer-group"></i> ' + linea + '</div>' +
-            '<div style="font-size:0.62rem;opacity:0.8;">' + ots.length + ' OT | ' + totalRecintos + ' EE</div></td>' +
+            '<div style="font-size:0.62rem;color:#5C6BC0;">' + ots.length + ' OT | ' + totalRecintos + ' EE</div></td>' +
             '<td colspan="' + columnas.length + '" style="position:relative;padding:4px 2px;vertical-align:top;">' +
             '<div style="position:relative;width:100%;min-height:' + alturaFila + 'px;">';
         
         barrasConNiveles.forEach((barra) => {
             const ot = barra.ot;
-            const estadoClass = (ot.estado || 'sin-estado').toLowerCase()
-                .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-');
+            const categoria = getEstadoCategoria(ot.estado);
             
             const colores = {
                 'programada': '#5C9CE6',
                 'en-proceso': '#F5A623',
-                'completada': '#5CB85C',
-                'cancelada': '#E05555',
-                'recepcion-conforme': '#5CB85C',
+                'finalizada': '#5CB85C',
                 'sin-estado': '#A0A0A0'
             };
             
-            const color = colores[estadoClass] || '#78909C';
+            const color = colores[categoria] || '#78909C';
             
-            // FILTRO ITO: Si hay filtro activo, las OTs no coincidentes se aclaran
             let opacidad = 1;
             if (itoFiltro && ot.ito !== itoFiltro) {
                 opacidad = 0.3;
@@ -352,18 +340,6 @@ function renderizarGantt() {
             
             const codigoInicio = codigoDia(barra.inicio);
             const codigoFin = codigoDia(barra.fin);
-            
-            // Nombre del recinto: máximo 2/3 del ancho, si es largo salto de línea
-            const nombreRecinto = ot.nombreRecinto || '';
-            const maxCharsLinea = 20;
-            let nombreFormateado = nombreRecinto;
-            if (nombreRecinto.length > maxCharsLinea) {
-                const mitad = Math.floor(nombreRecinto.length / 2);
-                const espacioCerca = nombreRecinto.lastIndexOf(' ', mitad);
-                if (espacioCerca > 0 && espacioCerca < nombreRecinto.length - 1) {
-                    nombreFormateado = nombreRecinto.substring(0, espacioCerca) + '<br>' + nombreRecinto.substring(espacioCerca + 1);
-                }
-            }
             
             const tooltipHTML = '<div style="font-family:sans-serif;padding:10px;min-width:280px;">' +
                 '<div style="display:flex;justify-content:space-between;margin-bottom:8px;">' +
@@ -380,7 +356,7 @@ function renderizarGantt() {
                 '<div style="text-align:right;font-weight:bold;font-size:1rem;color:#2E7D32;">Total: ' + presupuestoFormateado + '</div></div>';
             
             const tooltipEscaped = tooltipHTML.replace(/"/g, '&quot;').replace(/'/g, "&#39;");
-            const textoBarra = ot.numeroOT + ' - ' + nombreRecinto;
+            const textoBarra = ot.numeroOT + ' - ' + ot.nombreRecinto;
             
             html += '<div class="gantt-bar-chevron gantt-tooltip-trigger" ' +
                 'style="left:' + barra.leftPercent + '%;width:' + Math.max(barra.widthPercent, 0.3) + '%;' +
@@ -394,13 +370,6 @@ function renderizarGantt() {
     });
     
     html += '</tbody></table>';
-    
-    if (hoy >= fechaInicio && hoy <= fechaFin) {
-        const hoyOffset = (hoy - fechaInicio) / (1000 * 60 * 60 * 24);
-        const hoyPercent = Math.max(0, Math.min(100, (hoyOffset / totalDias) * 100));
-        html += '<div class="today-line" style="left:' + hoyPercent + '%;"></div>';
-    }
-    
     html += '</div></div>';
     
     ganttChart.innerHTML = html;
