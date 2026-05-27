@@ -1,4 +1,3 @@
-// Configuración de Google Sheets
 const SHEET_ID = '1_9ewqYv-o3O37ylPS6vxcGceBOQ1l4jB2VlM2T_4iSg';
 const SHEET_NAME = 'BBDD_OT';
 const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${SHEET_NAME}`;
@@ -14,7 +13,7 @@ async function cargarDatos() {
     try {
         loadingSpinner.style.display = 'block';
         errorMessage.style.display = 'none';
-        ganttView.style.display = 'none';
+        if (ganttView) ganttView.style.display = 'none';
         
         const response = await fetch(CSV_URL);
         if (!response.ok) throw new Error('Error al cargar datos');
@@ -32,12 +31,7 @@ async function cargarDatos() {
         
         loadingSpinner.style.display = 'none';
         
-        ganttView.style.display = 'block';
-        document.getElementById('tarjetasView').style.display = 'none';
-        
-        const botones = document.querySelectorAll('.view-btn');
-        botones.forEach(btn => btn.classList.remove('active'));
-        if (botones[0]) botones[0].classList.add('active');
+        if (ganttView) ganttView.style.display = 'block';
         
         if (typeof inicializarGantt === 'function') {
             inicializarGantt();
@@ -55,7 +49,6 @@ function parseCSV(csvText) {
     const lineas = csvText.split('\n');
     const headers = lineas[0].split(',').map(h => h.trim().replace(/"/g, ''));
     const datos = [];
-    
     for (let i = 1; i < lineas.length; i++) {
         if (!lineas[i].trim()) continue;
         const valores = parsearLineaCSV(lineas[i]);
@@ -72,16 +65,10 @@ function parsearLineaCSV(linea) {
     const resultado = [];
     let actual = '';
     let entreComillas = false;
-    
     for (let char of linea) {
-        if (char === '"') {
-            entreComillas = !entreComillas;
-        } else if (char === ',' && !entreComillas) {
-            resultado.push(actual);
-            actual = '';
-        } else {
-            actual += char;
-        }
+        if (char === '"') { entreComillas = !entreComillas; }
+        else if (char === ',' && !entreComillas) { resultado.push(actual); actual = ''; }
+        else { actual += char; }
     }
     resultado.push(actual);
     return resultado;
@@ -156,39 +143,36 @@ function cambiarVista(vista) {
     }
 }
 
+function resetFiltros() {
+    document.getElementById('filterLinea').value = '';
+    document.getElementById('filterEstado').value = '';
+    document.getElementById('filterITO').value = '';
+    document.getElementById('filterRecinto').value = '';
+    document.getElementById('searchInput').value = '';
+    if (typeof renderizarGantt === 'function') renderizarGantt();
+}
+
 // Event listeners
 document.getElementById('searchInput').addEventListener('input', function() {
-    if (document.getElementById('ganttView').style.display !== 'none' && typeof renderizarGantt === 'function') {
-        renderizarGantt();
-    }
+    if (typeof renderizarGantt === 'function') renderizarGantt();
 });
 
 document.getElementById('filterLinea').addEventListener('change', function() {
-    if (document.getElementById('ganttView').style.display !== 'none' && typeof renderizarGantt === 'function') {
-        renderizarGantt();
-    }
+    if (typeof renderizarGantt === 'function') renderizarGantt();
 });
 
 document.getElementById('filterEstado').addEventListener('change', function() {
-    if (document.getElementById('ganttView').style.display !== 'none' && typeof renderizarGantt === 'function') {
-        renderizarGantt();
-    }
+    if (typeof renderizarGantt === 'function') renderizarGantt();
 });
+
 document.getElementById('filterITO').addEventListener('change', function() {
-    if (document.getElementById('ganttView').style.display !== 'none' && typeof renderizarGantt === 'function') {
-        renderizarGantt();
-    }
+    if (typeof renderizarGantt === 'function') renderizarGantt();
 });
 
-
-// Filtro por recinto (input de texto)
 document.getElementById('filterRecinto').addEventListener('input', function() {
-    if (document.getElementById('ganttView').style.display !== 'none' && typeof renderizarGantt === 'function') {
-        renderizarGantt();
-    }
+    if (typeof renderizarGantt === 'function') renderizarGantt();
 });
 
-// Iniciar cuando todo esté listo
 window.addEventListener('load', function() {
     cargarDatos();
 });
