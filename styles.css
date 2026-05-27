@@ -709,3 +709,58 @@ body {
     z-index: 15;
     background: #f5f5f5;
 }
+/* Estilos para la línea de HOY */
+.today-line {
+    position: absolute;
+    top: 120px;
+    bottom: 0;
+    width: 2px;
+    background: #ff0000;
+    z-index: 8;
+    pointer-events: none;
+    opacity: 0.8;
+}
+
+.today-line::before {
+    content: 'HOY';
+    position: absolute;
+    top: -20px;
+    left: -18px;
+    background: #ff0000;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: bold;
+}
+
+/* Barras mejoradas */
+.gantt-bar-v2 {
+    height: 30px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    min-width: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 0.75rem;
+}
+
+.gantt-bar-v2:hover {
+    opacity: 0.95;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    z-index: 100;
+}
+
+/* Contenedor con posición relativa para la línea HOY */
+#ganttScrollContainer {
+    position: relative;
+}
