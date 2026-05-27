@@ -17,7 +17,7 @@
     --text-secondary: #5f6368;
     --border: #dadce0;
     --shadow: 0 2px 8px rgba(0,0,0,0.08);
-    --sidebar-width: 280px;
+    --sidebar-width: 240px;
 }
 
 body {
@@ -31,7 +31,7 @@ body {
 .header {
     background: linear-gradient(135deg, #1a73e8 0%, #1557b0 100%);
     color: white;
-    padding: 1rem 2rem;
+    padding: 0.75rem 2rem;
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     position: sticky;
     top: 0;
@@ -49,7 +49,7 @@ body {
 }
 
 .header h1 {
-    font-size: 1.5rem;
+    font-size: 1.3rem;
     font-weight: 600;
     display: flex;
     align-items: center;
@@ -58,27 +58,27 @@ body {
 
 .header p {
     opacity: 0.9;
-    font-size: 0.8rem;
-    margin-top: 0.25rem;
+    font-size: 0.75rem;
+    margin-top: 0.15rem;
 }
 
 .header-stats {
     display: flex;
-    gap: 1rem;
+    gap: 0.75rem;
 }
 
 .stat-badge {
     background: rgba(255,255,255,0.2);
-    padding: 0.4rem 0.8rem;
+    padding: 0.3rem 0.7rem;
     border-radius: 20px;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 500;
 }
 
 /* Layout principal */
 .main-layout {
     display: flex;
-    height: calc(100vh - 80px);
+    height: calc(100vh - 65px);
     overflow: hidden;
 }
 
@@ -87,43 +87,43 @@ body {
     width: var(--sidebar-width);
     background: white;
     border-right: 1px solid var(--border);
-    padding: 1.5rem;
+    padding: 1rem;
     overflow-y: auto;
     flex-shrink: 0;
 }
 
 .sidebar-header {
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
     border-bottom: 2px solid var(--primary);
 }
 
 .sidebar-header h3 {
     color: var(--primary-dark);
-    font-size: 1.1rem;
+    font-size: 0.95rem;
 }
 
 .sidebar-section {
-    margin-bottom: 1.25rem;
+    margin-bottom: 0.75rem;
 }
 
 .sidebar-section label {
     display: block;
-    font-size: 0.8rem;
+    font-size: 0.7rem;
     font-weight: 600;
     color: var(--text-secondary);
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.3rem;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.3px;
 }
 
 .sidebar-section select,
 .sidebar-section input {
     width: 100%;
-    padding: 0.6rem 0.75rem;
-    border: 2px solid var(--border);
-    border-radius: 8px;
-    font-size: 0.9rem;
+    padding: 0.45rem 0.5rem;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.78rem;
     transition: all 0.3s;
     background: white;
 }
@@ -132,27 +132,27 @@ body {
 .sidebar-section input:focus {
     outline: none;
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(26,115,232,0.1);
+    box-shadow: 0 0 0 2px rgba(26,115,232,0.1);
 }
 
 .sidebar-actions {
-    margin-top: 1.5rem;
-    padding-top: 1rem;
+    margin-top: 1rem;
+    padding-top: 0.75rem;
     border-top: 1px solid var(--border);
 }
 
 .btn-reset {
     width: 100%;
-    padding: 0.6rem;
+    padding: 0.45rem;
     background: #f5f5f5;
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: 6px;
     cursor: pointer;
-    font-size: 0.85rem;
+    font-size: 0.78rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
+    gap: 0.4rem;
     transition: all 0.2s;
 }
 
@@ -161,28 +161,28 @@ body {
 }
 
 .sidebar-footer {
-    margin-top: 1.5rem;
-    padding-top: 1rem;
+    margin-top: 1rem;
+    padding-top: 0.75rem;
     border-top: 1px solid var(--border);
 }
 
 .view-selector {
     display: flex;
-    gap: 0.5rem;
+    gap: 0.4rem;
 }
 
 .view-btn {
     flex: 1;
-    padding: 0.5rem;
-    border: 2px solid var(--border);
+    padding: 0.4rem;
+    border: 1.5px solid var(--border);
     background: white;
-    border-radius: 8px;
+    border-radius: 6px;
     cursor: pointer;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.3rem;
+    gap: 0.25rem;
     transition: all 0.3s;
 }
 
@@ -196,7 +196,7 @@ body {
 .content {
     flex: 1;
     overflow: hidden;
-    padding: 1rem;
+    padding: 0.75rem;
     display: flex;
     flex-direction: column;
 }
@@ -204,61 +204,62 @@ body {
 /* Gantt */
 .gantt-container {
     background: white;
-    border-radius: 12px;
+    border-radius: 10px;
     box-shadow: var(--shadow);
     overflow: hidden;
     flex: 1;
     display: flex;
     flex-direction: column;
+    max-height: calc(100vh - 100px);
 }
 
 .gantt-toolbar {
-    padding: 0.75rem 1rem;
+    padding: 0.5rem 0.75rem;
     border-bottom: 1px solid var(--border);
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    gap: 1rem;
+    gap: 0.5rem;
     background: #f8f9fa;
     flex-shrink: 0;
 }
 
 .gantt-legend {
     display: flex;
-    gap: 1rem;
+    gap: 0.75rem;
     flex-wrap: wrap;
 }
 
 .legend-item {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
-    font-size: 0.8rem;
+    gap: 0.3rem;
+    font-size: 0.7rem;
 }
 
 .legend-color {
-    width: 14px;
-    height: 14px;
-    border-radius: 3px;
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
 }
 
 .gantt-navigation {
     display: flex;
-    gap: 0.4rem;
+    gap: 0.3rem;
 }
 
 .gantt-navigation button {
-    padding: 0.4rem 0.6rem;
+    padding: 0.3rem 0.5rem;
     border: 1px solid var(--border);
     background: white;
-    border-radius: 6px;
+    border-radius: 5px;
     cursor: pointer;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     transition: all 0.2s;
     display: flex;
     align-items: center;
-    gap: 0.3rem;
+    gap: 0.2rem;
 }
 
 .gantt-navigation button:hover {
@@ -272,6 +273,7 @@ body {
     overflow: auto;
     position: relative;
     min-height: 0;
+    max-height: 100%;
 }
 
 /* Tabla Gantt */
@@ -284,7 +286,7 @@ body {
 .gantt-table td {
     border: 1px solid #e8e8e8;
     padding: 0;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
 }
 
 .gantt-table thead th {
@@ -292,19 +294,18 @@ body {
     position: sticky;
     top: 0;
     z-index: 10;
-    padding: 4px;
+    padding: 3px;
     text-align: center;
 }
 
 .gantt-table .col-recinto {
-    min-width: 180px;
+    min-width: 170px;
     position: sticky;
     left: 0;
     z-index: 5;
     text-align: left;
-    padding: 8px;
+    padding: 6px 8px;
     font-weight: 500;
-    background: white;
 }
 
 .gantt-table thead .col-recinto {
@@ -312,94 +313,126 @@ body {
     background: #f8f9fa;
 }
 
-/* Barras cheurón (punta derecha) */
+/* Colores por línea de trabajo */
+.linea-color-1 { background: #E3F2FD !important; }
+.linea-color-2 { background: #E8F5E9 !important; }
+.linea-color-3 { background: #FFF3E0 !important; }
+.linea-color-4 { background: #F3E5F5 !important; }
+.linea-color-5 { background: #E0F7FA !important; }
+.linea-color-6 { background: #FFF9C4 !important; }
+.linea-color-7 { background: #F1F8E9 !important; }
+.linea-color-8 { background: #FBE9E7 !important; }
+.linea-color-extra { background: #ECEFF1 !important; }
+.linea-color-sin { background: #FAFAFA !important; }
+
+/* Barras cheurón - estilo dashboard referencia */
 .gantt-bar-chevron {
-    height: 26px;
+    height: 22px;
     display: flex;
     align-items: center;
     color: white;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.15s ease;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
     min-width: 4px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.15);
     font-family: 'Segoe UI', sans-serif;
     position: absolute;
-    clip-path: polygon(0% 0%, calc(100% - 10px) 0%, 100% 50%, calc(100% - 10px) 100%, 0% 100%);
-    padding-left: 6px;
-    font-size: 0.75rem;
+    border-radius: 3px;
+    padding: 0 8px;
+    font-size: 0.7rem;
+}
+
+/* Punta de flecha sutil */
+.gantt-bar-chevron::after {
+    content: '';
+    position: absolute;
+    right: -5px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border-top: 11px solid transparent;
+    border-bottom: 11px solid transparent;
+    border-left: 6px solid inherit;
 }
 
 .gantt-bar-chevron:hover {
     opacity: 0.95;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.25);
     z-index: 100;
 }
 
-/* Línea HOY */
+/* Línea HOY - CORREGIDA con position sticky */
 .today-line {
     position: absolute;
     top: 0;
-    bottom: 0;
+    height: 100%;
     width: 2px;
-    background: #ff0000;
+    background: #FF0000;
     z-index: 8;
     pointer-events: none;
-    opacity: 0.8;
+    opacity: 0.7;
 }
 
 .today-line::before {
     content: 'HOY';
-    position: absolute;
-    top: -22px;
+    position: sticky;
+    top: 5px;
     left: -18px;
-    background: #ff0000;
+    background: #FF0000;
     color: white;
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-size: 0.65rem;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 0.6rem;
     font-weight: bold;
     white-space: nowrap;
+    display: block;
+    width: fit-content;
 }
 
 /* Scrollbars visibles */
 .gantt-chart::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
+    width: 8px;
+    height: 8px;
 }
 
 .gantt-chart::-webkit-scrollbar-track {
     background: #f1f1f1;
-    border-radius: 5px;
+    border-radius: 4px;
 }
 
 .gantt-chart::-webkit-scrollbar-thumb {
-    background: #888;
-    border-radius: 5px;
+    background: #c0c0c0;
+    border-radius: 4px;
 }
 
 .gantt-chart::-webkit-scrollbar-thumb:hover {
-    background: #555;
+    background: #a0a0a0;
+}
+
+.gantt-chart::-webkit-scrollbar-corner {
+    background: #f1f1f1;
 }
 
 /* Loading y errores */
 .loading {
     text-align: center;
-    padding: 4rem;
+    padding: 3rem;
     color: var(--text-secondary);
 }
 
 .loading i {
-    font-size: 3rem;
-    margin-bottom: 1rem;
+    font-size: 2.5rem;
+    margin-bottom: 0.75rem;
 }
 
 .error {
     text-align: center;
-    padding: 2rem;
+    padding: 1.5rem;
     background: #fce8e6;
     border-radius: 8px;
     color: #c5221f;
@@ -408,11 +441,11 @@ body {
 /* Footer */
 .footer {
     text-align: center;
-    padding: 0.75rem;
+    padding: 0.5rem;
     background: white;
     border-top: 1px solid var(--border);
     color: var(--text-secondary);
-    font-size: 0.8rem;
+    font-size: 0.7rem;
 }
 
 /* Responsive */
@@ -425,10 +458,11 @@ body {
         width: 100%;
         border-right: none;
         border-bottom: 1px solid var(--border);
-        padding: 1rem;
+        padding: 0.75rem;
     }
     
     .gantt-container {
         height: auto;
+        max-height: none;
     }
 }
