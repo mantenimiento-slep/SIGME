@@ -174,6 +174,12 @@ document.getElementById('filterEstado').addEventListener('change', function() {
         renderizarGantt();
     }
 });
+document.getElementById('filterITO').addEventListener('change', function() {
+    if (document.getElementById('ganttView').style.display !== 'none' && typeof renderizarGantt === 'function') {
+        renderizarGantt();
+    }
+});
+
 
 // Filtro por recinto (input de texto)
 document.getElementById('filterRecinto').addEventListener('input', function() {
