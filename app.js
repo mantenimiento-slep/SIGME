@@ -32,20 +32,15 @@ async function cargarDatos() {
         
         loadingSpinner.style.display = 'none';
         
-        // Mostrar vista Gantt y renderizar
         ganttView.style.display = 'block';
         document.getElementById('tarjetasView').style.display = 'none';
         
-        // Activar botón Gantt
         const botones = document.querySelectorAll('.view-btn');
         botones.forEach(btn => btn.classList.remove('active'));
         if (botones[0]) botones[0].classList.add('active');
         
-        // Renderizar Gantt
         if (typeof inicializarGantt === 'function') {
             inicializarGantt();
-        } else {
-            throw new Error('Función inicializarGantt no encontrada');
         }
         
     } catch (error) {
@@ -119,30 +114,25 @@ function actualizarEstadisticas() {
 function llenarFiltros() {
     const filterLinea = document.getElementById('filterLinea');
     const filterEstado = document.getElementById('filterEstado');
-    const filterTipo = document.getElementById('filterTipo');
     
-    lineasUnicas.sort().forEach(linea => {
-        const option = document.createElement('option');
-        option.value = linea;
-        option.textContent = linea;
-        filterLinea.appendChild(option);
-    });
+    if (filterLinea) {
+        lineasUnicas.sort().forEach(linea => {
+            const option = document.createElement('option');
+            option.value = linea;
+            option.textContent = linea;
+            filterLinea.appendChild(option);
+        });
+    }
     
-    const estadosUnicos = [...new Set(todasLasOTs.map(ot => ot.estado).filter(Boolean))].sort();
-    estadosUnicos.forEach(estado => {
-        const option = document.createElement('option');
-        option.value = estado;
-        option.textContent = estado;
-        filterEstado.appendChild(option);
-    });
-    
-    const tiposUnicos = [...new Set(todasLasOTs.map(ot => ot.tipoIntervencion).filter(Boolean))].sort();
-    tiposUnicos.forEach(tipo => {
-        const option = document.createElement('option');
-        option.value = tipo;
-        option.textContent = tipo;
-        filterTipo.appendChild(option);
-    });
+    if (filterEstado) {
+        const estadosUnicos = [...new Set(todasLasOTs.map(ot => ot.estado).filter(Boolean))].sort();
+        estadosUnicos.forEach(estado => {
+            const option = document.createElement('option');
+            option.value = estado;
+            option.textContent = estado;
+            filterEstado.appendChild(option);
+        });
+    }
 }
 
 function cambiarVista(vista) {
@@ -185,14 +175,14 @@ document.getElementById('filterEstado').addEventListener('change', function() {
     }
 });
 
-document.getElementById('filterTipo').addEventListener('change', function() {
+// Filtro por recinto (input de texto)
+document.getElementById('filterRecinto').addEventListener('input', function() {
     if (document.getElementById('ganttView').style.display !== 'none' && typeof renderizarGantt === 'function') {
         renderizarGantt();
     }
 });
 
-// Iniciar cuando TODO esté listo
+// Iniciar cuando todo esté listo
 window.addEventListener('load', function() {
-    console.log('SIGME 2.0 - Iniciando carga de datos...');
     cargarDatos();
 });
