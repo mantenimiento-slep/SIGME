@@ -779,3 +779,40 @@ body {
     border-color: var(--primary);
     box-shadow: 0 0 0 3px rgba(26,115,232,0.1);
 }
+/* Estilo cheurón para las barras */
+.gantt-bar-chevron {
+    height: 28px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    min-width: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    font-family: 'Segoe UI', sans-serif;
+    position: absolute;
+    clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 50%, 100% 100%, 8px 100%, 0% 50%);
+}
+
+.gantt-bar-chevron:hover {
+    opacity: 0.95;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    z-index: 100;
+}
+
+/* Naranjo pastel */
+td[style*="FFE0B2"], th[style*="FFE0B2"] {
+    background: #FFE0B2 !important;
+    color: #E65100 !important;
+}
+
+/* Rojo pastel para feriados */
+td[style*="FFCDD2"], th[style*="FFCDD2"] {
+    background: #FFCDD2 !important;
+    color: #B71C1C !important;
+}
