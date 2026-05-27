@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIGME 2.0 - Visualizador de Programación</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div>
+                <h1><i class="fas fa-school"></i> SIGME 2.0</h1>
+                <p>Sistema de Gestión del Mantenimiento Escolar</p>
+            </div>
+            <div class="header-stats">
+                <div class="stat-badge" id="totalOT">Cargando...</div>
+                <div class="stat-badge" id="totalRecintos">Cargando...</div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="controls">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchInput" placeholder="Buscar por establecimiento, ITO o N° OT...">
+            </div>
+            <div class="filters">
+                <select id="filterLinea">
+                    <option value="">Todas las líneas de trabajo</option>
+                </select>
+                <select id="filterEstado">
+                    <option value="">Todos los estados</option>
+                </select>
+                <select id="filterTipo">
+                    <option value="">Todos los tipos de intervención</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="loadingSpinner" class="loading">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Cargando programación de mantenimiento...</p>
+        </div>
+
+        <div id="errorMessage" class="error" style="display: none;">
+            <i class="fas fa-exclamation-triangle"></i>
+            <p id="errorText"></p>
+        </div>
+
+        <div id="dashboard" style="display: none;">
+            <!-- Se llena dinámicamente -->
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>SIGME 2.0 - Desarrollado para la gestión de 76 establecimientos escolares</p>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
