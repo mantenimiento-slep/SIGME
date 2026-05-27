@@ -336,3 +336,259 @@ body {
         width: 100%;
     }
 }
+/* Estilos para la vista Gantt */
+.view-selector {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.view-btn {
+    padding: 0.75rem 1.5rem;
+    border: 2px solid var(--border);
+    background: white;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s;
+}
+
+.view-btn.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.view-btn:hover:not(.active) {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.gantt-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+}
+
+.gantt-toolbar {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    background: #f8f9fa;
+}
+
+.gantt-legend {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+}
+
+.legend-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+}
+
+.gantt-navigation {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.gantt-navigation button {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border);
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.gantt-navigation button:hover {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.gantt-chart {
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: 70vh;
+    position: relative;
+}
+
+.gantt-table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 1200px;
+}
+
+.gantt-table th,
+.gantt-table td {
+    border: 1px solid #e0e0e0;
+    padding: 0;
+    font-size: 0.8rem;
+}
+
+.gantt-table thead th {
+    background: #f8f9fa;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    padding: 0.5rem;
+    text-align: center;
+    font-weight: 600;
+    color: var(--text-secondary);
+    min-width: 40px;
+}
+
+.gantt-table .col-recinto {
+    min-width: 200px;
+    position: sticky;
+    left: 0;
+    background: white;
+    z-index: 5;
+    text-align: left;
+    padding: 0.5rem;
+    font-weight: 500;
+}
+
+.gantt-table thead .col-recinto {
+    background: #f8f9fa;
+    z-index: 15;
+    text-align: left;
+}
+
+.gantt-table .col-linea {
+    background: #f0f4ff;
+    font-weight: 600;
+    color: var(--primary-dark);
+    padding: 0.75rem 0.5rem;
+    position: sticky;
+    left: 0;
+    z-index: 4;
+}
+
+.gantt-table tbody tr:hover td {
+    background: #f5f8ff;
+}
+
+.gantt-bar-container {
+    position: relative;
+    height: 30px;
+    margin: 2px 0;
+}
+
+.gantt-bar {
+    position: absolute;
+    height: 24px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    font-size: 0.7rem;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    min-width: 4px;
+}
+
+.gantt-bar:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    z-index: 100;
+}
+
+.gantt-bar.programada { background: #1a73e8; }
+.gantt-bar.en-proceso { background: #f4b400; }
+.gantt-bar.completada { background: #0f9d58; }
+.gantt-bar.cancelada { background: #db4437; }
+.gantt-bar.sin-estado { background: #9e9e9e; }
+
+.gantt-tooltip {
+    position: absolute;
+    background: rgba(0,0,0,0.9);
+    color: white;
+    padding: 0.75rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    z-index: 1000;
+    pointer-events: none;
+    max-width: 300px;
+    line-height: 1.4;
+}
+
+.gantt-tooltip strong {
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.weekend {
+    background: #fff5f5 !important;
+}
+
+.today-marker {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #ff0000;
+    z-index: 3;
+    opacity: 0.6;
+}
+
+.today-marker::before {
+    content: 'HOY';
+    position: absolute;
+    top: -20px;
+    left: -15px;
+    background: #ff0000;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.7rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .gantt-toolbar {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .gantt-legend {
+        gap: 1rem;
+    }
+    
+    .gantt-table .col-recinto {
+        min-width: 150px;
+    }
+}
+
+/* Ajustes para vista de tarjetas */
+#tarjetasView {
+    display: grid;
+    gap: 1.5rem;
+}
