@@ -9,43 +9,53 @@ function parsearFecha(fechaStr) {
     
     fechaStr = fechaStr.trim();
     
-    // Formato DD.MM.YYYY
+    // Formato DD.MM.YY o DD.MM.YYYY
     const partesPunto = fechaStr.split('.');
     if (partesPunto.length === 3) {
         const dia = parseInt(partesPunto[0], 10);
         const mes = parseInt(partesPunto[1], 10) - 1;
-        const año = parseInt(partesPunto[2], 10);
+        let año = parseInt(partesPunto[2], 10);
+        
+        // CORRECCIÓN: Si el año tiene 2 dígitos, asumir 2000+
+        if (año < 100) {
+            año += 2000;
+        }
         
         if (!isNaN(dia) && !isNaN(mes) && !isNaN(año)) {
             return new Date(año, mes, dia);
         }
     }
     
-    // Formato D-M-YYYY o DD-MM-YYYY (con guiones)
+    // Formato D-M-YY o DD-MM-YYYY (con guiones)
     const partesGuion = fechaStr.split('-');
     if (partesGuion.length === 3) {
         const dia = parseInt(partesGuion[0], 10);
         const mes = parseInt(partesGuion[1], 10) - 1;
-        const año = parseInt(partesGuion[2], 10);
+        let año = parseInt(partesGuion[2], 10);
         
-        // Si el año tiene 2 dígitos, convertirlo a 4
-        const añoCompleto = año < 100 ? 2000 + año : año;
+        // Si el año tiene 2 dígitos, convertir a 2000+
+        if (año < 100) {
+            año += 2000;
+        }
         
-        if (!isNaN(dia) && !isNaN(mes) && !isNaN(añoCompleto)) {
-            return new Date(añoCompleto, mes, dia);
+        if (!isNaN(dia) && !isNaN(mes) && !isNaN(año)) {
+            return new Date(año, mes, dia);
         }
     }
     
-    // Formato DD/MM/YYYY
+    // Formato DD/MM/YY o DD/MM/YYYY
     const partesBarra = fechaStr.split('/');
     if (partesBarra.length === 3) {
         const dia = parseInt(partesBarra[0], 10);
         const mes = parseInt(partesBarra[1], 10) - 1;
-        const año = parseInt(partesBarra[2], 10);
-        const añoCompleto = año < 100 ? 2000 + año : año;
+        let año = parseInt(partesBarra[2], 10);
         
-        if (!isNaN(dia) && !isNaN(mes) && !isNaN(añoCompleto)) {
-            return new Date(añoCompleto, mes, dia);
+        if (año < 100) {
+            año += 2000;
+        }
+        
+        if (!isNaN(dia) && !isNaN(mes) && !isNaN(año)) {
+            return new Date(año, mes, dia);
         }
     }
     
