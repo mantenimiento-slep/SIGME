@@ -4,7 +4,6 @@ let zoomLevel = 1;
 let ganttData = [];
 let itoFiltro = null;
 
-// Días feriados de Chile 2026
 const feriados2026 = [
     '2026-01-01', '2026-04-03', '2026-04-04',
     '2026-05-01', '2026-05-21', '2026-06-29',
@@ -13,9 +12,8 @@ const feriados2026 = [
     '2026-11-01', '2026-12-08', '2026-12-25',
 ];
 
-// Rango naranjo pastel: 22 junio al 5 julio 2026
-const rangoNaranjoInicio = new Date(2026, 5, 22); // 22 junio
-const rangoNaranjoFin = new Date(2026, 6, 5);      // 5 julio
+const rangoNaranjoInicio = new Date(2026, 5, 22);
+const rangoNaranjoFin = new Date(2026, 6, 5);
 
 function esFeriado(fecha) {
     const fechaStr = fecha.getFullYear() + '-' + 
@@ -50,15 +48,6 @@ function parsearFecha(fechaStr) {
         if (!isNaN(dia) && !isNaN(mes) && !isNaN(año)) return new Date(año, mes, dia);
     }
     
-    const partesBarra = fechaStr.split('/');
-    if (partesBarra.length === 3) {
-        const dia = parseInt(partesBarra[0], 10);
-        const mes = parseInt(partesBarra[1], 10) - 1;
-        let año = parseInt(partesBarra[2], 10);
-        if (año < 100) año += 2000;
-        if (!isNaN(dia) && !isNaN(mes) && !isNaN(año)) return new Date(año, mes, dia);
-    }
-    
     return null;
 }
 
@@ -78,26 +67,30 @@ function diasHabiles(fechaInicio, fechaFin) {
     return dias;
 }
 
-function asignarNiveles(ots, fechaInicioPeriodo, totalDias) {
-    const barras = ots.map((ot, index) => {
+function asignarNiveles(ots, fechaInicioPeriodo, fechaFinPeriodo, totalDias) {
+    const barras = ots.map((ot) => {
         const inicio = parsearFecha(ot.fechaInicio);
         const fin = parsearFecha(ot.fechaFin);
         if (!inicio || !fin) return null;
         
-        const inicioOffset = (inicio - fechaInicioPeriodo) / (1000 * 60 * 60 * 24);
-        const duracion = Math.max((fin - inicio) / (1000 * 60 * 60 * 24) + 1, 1);
+        // Recortar al período visible
+        const inicioVisible = inicio < fechaInicioPeriodo ? fechaInicioPeriodo : inicio;
+        const finVisible = fin > fechaFinPeriodo ? fechaFinPeriodo : fin;
+        
+        const inicioOffset = (inicioVisible - fechaInicioPeriodo) / (1000 * 60 * 60 * 24);
+        const duracion = Math.max((finVisible - inicioVisible) / (1000 * 60 * 60 * 24) + 1, 1);
         const leftPercent = (inicioOffset / totalDias) * 100;
         const widthPercent = (duracion / totalDias) * 100;
         
         return {
-            ot, index, inicio, fin,
+            ot, inicio, fin, inicioVisible, finVisible,
             leftPercent: Math.max(0, leftPercent),
-            widthPercent: Math.max(0.2, widthPercent),
+            widthPercent: Math.max(0.3, widthPercent),
             nivel: 0
         };
     }).filter(b => b !== null);
     
-    barras.sort((a, b) => a.inicio - b.inicio);
+    barras.sort((a, b) => a.inicioVisible - b.inicioVisible);
     
     barras.forEach((barra, i) => {
         let nivelAsignado = 0;
@@ -105,7 +98,7 @@ function asignarNiveles(ots, fechaInicioPeriodo, totalDias) {
         while (!encontrado) {
             encontrado = true;
             for (let j = 0; j < i; j++) {
-                if (barras[j].nivel === nivelAsignado && barra.inicio <= barras[j].fin) {
+                if (barras[j].nivel === nivelAsignado && barra.inicioVisible <= barras[j].finVisible) {
                     encontrado = false;
                     nivelAsignado++;
                     break;
@@ -154,9 +147,9 @@ function renderizarGantt() {
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
     
-    // Período: 3 semanas atrás + 8 semanas adelante
+    // Período: 6 semanas atrás + 8 semanas adelante
     const fechaInicio = new Date(hoy);
-    fechaInicio.setDate(fechaInicio.getDate() - 21);
+    fechaInicio.setDate(fechaInicio.getDate() - 42);
     
     const fechaFin = new Date(hoy);
     fechaFin.setDate(fechaFin.getDate() + 56);
@@ -172,8 +165,8 @@ function renderizarGantt() {
         const fin = parsearFecha(ot.fechaFin);
         if (!inicio || !fin) return false;
         
-        // Permitir OTs que se superpongan con el período visible
-        if (fin < fechaInicio && inicio > fechaFin) return false;
+        // CORRECCIÓN: Usar OR en lugar de AND
+        if (fin < fechaInicio || inicio > fechaFin) return false;
         
         const matchSearch = !searchTerm || 
             ot.nombreRecinto.toLowerCase().includes(searchTerm) ||
@@ -192,7 +185,6 @@ function renderizarGantt() {
         return;
     }
     
-    // Ordenar: líneas con nombre primero, luego "Sin línea", luego "Línea Extra"
     otsFiltradas.sort((a, b) => {
         const lineaA = a.lineaTrabajo || 'ZZZ';
         const lineaB = b.lineaTrabajo || 'ZZZ';
@@ -221,13 +213,12 @@ function renderizarGantt() {
         grupos[linea].push(ot);
     });
     
-    let html = '<div style="overflow-x: auto; position: relative;" id="ganttScrollContainer">';
-    html += `<div style="padding: 8px; background: #e8f5e9; font-size: 0.85rem; margin-bottom: 8px; border-radius: 4px;">
-        📅 Período: <strong>${formatearFecha(fechaInicio)}</strong> al <strong>${formatearFecha(fechaFin)}</strong> | 
-        ${otsFiltradas.length} OT encontradas
+    let html = '<div style="overflow: auto; position: relative; height: 100%;" id="ganttScrollContainer">';
+    html += `<div style="padding: 6px 12px; background: #e8f5e9; font-size: 0.8rem; margin-bottom: 4px; border-radius: 4px; position: sticky; top: 0; z-index: 20;">
+        📅 <strong>${formatearFecha(fechaInicio)}</strong> → <strong>${formatearFecha(fechaFin)}</strong> | ${otsFiltradas.length} OT
     </div>`;
     
-    html += '<table class="gantt-table"><thead><tr><th class="col-recinto" style="width: 250px;">Línea de Trabajo</th>';
+    html += '<table class="gantt-table"><thead><tr><th class="col-recinto" style="width: 180px;">Línea de Trabajo</th>';
     
     const meses = {};
     columnas.forEach(fecha => {
@@ -238,10 +229,10 @@ function renderizarGantt() {
     
     Object.values(meses).forEach(mes => {
         const nombreMes = mes.fecha.toLocaleDateString('es-CL', { month: 'long', year: 'numeric' });
-        html += `<th colspan="${mes.dias}" style="background: #e3f2fd; text-align: center; padding: 6px;">${nombreMes}</th>`;
+        html += `<th colspan="${mes.dias}" style="background: #e3f2fd; text-align: center; padding: 4px; font-size: 0.75rem;">${nombreMes}</th>`;
     });
     
-    html += '</tr><tr><th class="col-recinto" style="width: 250px;">Establecimientos</th>';
+    html += '</tr><tr><th class="col-recinto" style="width: 180px; font-size: 0.75rem;">Establecimientos</th>';
     
     columnas.forEach(fecha => {
         const esFinde = fecha.getDay() === 0 || fecha.getDay() === 6;
@@ -260,22 +251,22 @@ function renderizarGantt() {
             estilo = 'background: #F5F5F5; color: #9E9E9E;';
         }
         
-        html += `<th style="${estilo} padding: 4px; text-align: center; font-size: 0.75rem;">${fecha.getDate()}<br><small>${['Do','Lu','Ma','Mi','Ju','Vi','Sá'][fecha.getDay()]}</small></th>`;
+        html += `<th style="${estilo} padding: 3px; text-align: center; font-size: 0.7rem;">${fecha.getDate()}<br><small>${['Do','Lu','Ma','Mi','Ju','Vi','Sá'][fecha.getDay()]}</small></th>`;
     });
     
     html += '</tr></thead><tbody>';
     
     Object.entries(grupos).forEach(([linea, ots]) => {
         const totalRecintos = new Set(ots.map(ot => ot.nombreRecinto)).size;
-        const barrasConNiveles = asignarNiveles(ots, fechaInicio, totalDias);
+        const barrasConNiveles = asignarNiveles(ots, fechaInicio, fechaFin, totalDias);
         const alturaFila = Math.max(barrasConNiveles[0]?.alturaFila || 60, 60);
         
         html += `<tr class="linea-row">
-            <td class="col-recinto" style="background: #E8EAF6; font-weight: 600; color: #1A237E; border-bottom: 2px solid #3F51B5; padding: 10px; vertical-align: top;">
-                <div style="font-size: 1rem; margin-bottom: 4px;"><i class="fas fa-layer-group"></i> ${linea}</div>
-                <div style="font-size: 0.75rem; color: #5C6BC0;">${ots.length} OT | ${totalRecintos} EE</div>
+            <td class="col-recinto" style="background: #E8EAF6; font-weight: 600; color: #1A237E; border-bottom: 2px solid #3F51B5; padding: 8px; vertical-align: top; font-size: 0.75rem;">
+                <div style="margin-bottom: 2px;"><i class="fas fa-layer-group"></i> ${linea}</div>
+                <div style="font-size: 0.65rem; color: #5C6BC0;">${ots.length} OT | ${totalRecintos} EE</div>
             </td>
-            <td colspan="${columnas.length}" style="position: relative; padding: 8px 4px; background: #FAFBFF; vertical-align: top;">
+            <td colspan="${columnas.length}" style="position: relative; padding: 6px 2px; background: #FAFBFF; vertical-align: top;">
                 <div style="position: relative; width: 100%; min-height: ${alturaFila}px;">`;
         
         barrasConNiveles.forEach((barra) => {
@@ -296,7 +287,6 @@ function renderizarGantt() {
             
             const color = colores[estadoClass] || '#78909C';
             
-            // Aplicar transparencia si hay filtro ITO
             let opacidad = 1;
             if (itoFiltro && ot.ito !== itoFiltro) opacidad = 0.25;
             
@@ -309,42 +299,39 @@ function renderizarGantt() {
             const codigoInicio = codigoDia(barra.inicio);
             const codigoFin = codigoDia(barra.fin);
             
-            const tooltipHTML = `<div style="font-family: 'Segoe UI', sans-serif; padding: 12px; min-width: 300px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                    <strong style="font-size: 1.1rem; color: #1A237E;">${ot.nombreRecinto}</strong>
-                    <strong style="font-size: 1.1rem; color: #1565C0;">${ot.numeroOT}</strong>
+            const tooltipHTML = `<div style="font-family: 'Segoe UI', sans-serif; padding: 10px; min-width: 280px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <strong style="font-size: 1rem; color: #1A237E;">${ot.nombreRecinto}</strong>
+                    <strong style="font-size: 1rem; color: #1565C0;">${ot.numeroOT}</strong>
                 </div>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #E0E0E0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #E0E0E0;">
                     <span><i class="fas fa-user"></i> ${ot.ito}</span>
-                    <span style="font-weight: bold; color: #ED56A1; font-size: 1.2rem;">${duracionHabiles}d</span>
+                    <span style="font-weight: bold; color: #ED56A1; font-size: 1.1rem;">${duracionHabiles}d</span>
                 </div>
-                <div style="margin-bottom: 5px; font-size: 0.95rem;"><strong>${codigoInicio}</strong> ${ot.fechaInicio}</div>
-                <div style="margin-bottom: 10px; font-size: 0.95rem;"><strong>${codigoFin}</strong> ${ot.fechaFin}</div>
-                <div style="margin-bottom: 10px; padding: 8px; background: #F5F5F5; border-radius: 6px;">
-                    <strong style="font-size: 0.9rem; color: #333;">TIPO INTERVENCIÓN</strong><br>
-                    <span style="font-size: 0.9rem;">${ot.tipoIntervencion}</span>
+                <div style="margin-bottom: 4px; font-size: 0.9rem;"><strong>${codigoInicio}</strong> ${ot.fechaInicio}</div>
+                <div style="margin-bottom: 8px; font-size: 0.9rem;"><strong>${codigoFin}</strong> ${ot.fechaFin}</div>
+                <div style="margin-bottom: 8px; padding: 6px; background: #F5F5F5; border-radius: 4px;">
+                    <strong style="font-size: 0.8rem; color: #333;">TIPO INTERVENCIÓN</strong><br>
+                    <span style="font-size: 0.85rem;">${ot.tipoIntervencion}</span>
                 </div>
-                <div style="text-align: right; font-weight: bold; font-size: 1.1rem; color: #2E7D32;">Total: ${presupuestoFormateado}</div>
+                <div style="text-align: right; font-weight: bold; font-size: 1rem; color: #2E7D32;">Total: ${presupuestoFormateado}</div>
             </div>`;
             
             const tooltipEscaped = tooltipHTML.replace(/"/g, '&quot;').replace(/'/g, "&#39;");
             
-            // Calcular ancho mínimo para mostrar texto
-            const anchoPorcentaje = barra.widthPercent;
-            const textoCompleto = `${ot.numeroOT} · ${ot.nombreRecinto}`;
-            const textoSolo = anchoPorcentaje < 2 ? '' : (anchoPorcentaje < 5 ? ot.numeroOT : textoCompleto);
+            const textoBarra = `${ot.numeroOT} · ${ot.nombreRecinto}`;
             
             html += `<div class="gantt-bar-chevron gantt-tooltip-trigger" 
-                style="left: ${barra.leftPercent}%; width: ${Math.max(barra.widthPercent, 0.3)}%; top: ${barra.topPosition}px; position: absolute; background: ${color}; opacity: ${opacidad};"
+                style="left: ${barra.leftPercent}%; width: ${Math.max(barra.widthPercent, 0.3)}%; top: ${barra.topPosition}px; position: absolute; background: ${color}; opacity: ${opacidad}; font-size: 0.75rem;"
                 data-tooltip="${tooltipEscaped}">
-                <span style="font-size: 0.7rem; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 12px;">
-                    ${textoSolo}
+                <span style="line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 10px;">
+                    ${textoBarra}
                 </span>
             </div>`;
         });
         
         html += `</div></td></tr>`;
-        html += `<tr><td colspan="${columnas.length + 1}" style="padding: 0; height: 6px; background: #E0E0E0;"></td></tr>`;
+        html += `<tr><td colspan="${columnas.length + 1}" style="padding: 0; height: 4px; background: #E0E0E0;"></td></tr>`;
     });
     
     html += '</tbody></table>';
@@ -352,20 +339,28 @@ function renderizarGantt() {
     // Línea HOY
     const hoyOffset = (hoy - fechaInicio) / (1000 * 60 * 60 * 24);
     const hoyPercent = Math.max(0, Math.min(100, (hoyOffset / totalDias) * 100));
-    html += `<div class="today-line" style="left: ${hoyPercent}%;">HOY</div>`;
-    
-    html += '</div>';
     
     ganttChart.innerHTML = html;
     
-    // Centrar en HOY
-    setTimeout(() => {
-        const container = document.getElementById('ganttScrollContainer');
-        if (container && hoyPercent > 0) {
-            const hoyPosition = (hoyPercent / 100) * container.scrollWidth;
-            container.scrollLeft = hoyPosition - (container.clientWidth / 3);
-        }
-    }, 100);
+    // Agregar línea HOY después de renderizar
+    const container = document.getElementById('ganttScrollContainer');
+    if (container) {
+        const todayLine = document.createElement('div');
+        todayLine.className = 'today-line';
+        todayLine.style.cssText = `left: ${hoyPercent}%; position: sticky; top: 0; height: 100%;`;
+        todayLine.innerHTML = 'HOY';
+        // Insertar después de la tabla
+        container.appendChild(todayLine);
+        
+        // Centrar en HOY
+        setTimeout(() => {
+            const tablaAncho = container.querySelector('table')?.offsetWidth || 0;
+            if (tablaAncho > 0) {
+                const hoyPosition = (hoyPercent / 100) * tablaAncho;
+                container.scrollLeft = hoyPosition - (container.clientWidth / 3);
+            }
+        }, 100);
+    }
     
     inicializarTooltips();
 }
@@ -379,7 +374,7 @@ function inicializarTooltips() {
     tooltip.style.cssText = `
         position: fixed; background: white; border: 2px solid #E0E0E0;
         border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-        padding: 0; z-index: 10000; display: none; pointer-events: none; max-width: 380px;
+        padding: 0; z-index: 10000; display: none; pointer-events: none; max-width: 360px;
     `;
     document.body.appendChild(tooltip);
     
@@ -393,7 +388,7 @@ function inicializarTooltips() {
             let left = rect.left + rect.width / 2;
             let top = rect.bottom + 10;
             
-            if (left + 190 > window.innerWidth) left = window.innerWidth - 390;
+            if (left + 180 > window.innerWidth) left = window.innerWidth - 370;
             if (top + 250 > window.innerHeight) top = rect.top - 260;
             if (left < 10) left = 10;
             
@@ -416,15 +411,17 @@ function scrollGantt(direction) {
     const container = document.getElementById('ganttScrollContainer');
     if (!container) return;
     
+    const scrollAmount = 400;
+    
     if (direction === 'left') {
-        container.scrollLeft -= 400;
+        container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
     } else if (direction === 'right') {
-        container.scrollLeft += 400;
+        container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
     } else if (direction === 'today') {
         const hoy = new Date();
         hoy.setHours(0, 0, 0, 0);
         const fechaInicio = new Date(hoy);
-        fechaInicio.setDate(fechaInicio.getDate() - 21);
+        fechaInicio.setDate(fechaInicio.getDate() - 42);
         const fechaFin = new Date(hoy);
         fechaFin.setDate(fechaFin.getDate() + 56);
         
@@ -432,8 +429,11 @@ function scrollGantt(direction) {
         const hoyOffset = (hoy - fechaInicio) / (1000 * 60 * 60 * 24);
         const hoyPercent = (hoyOffset / totalDias) * 100;
         
-        const hoyPosition = (hoyPercent / 100) * container.scrollWidth;
-        container.scrollLeft = hoyPosition - (container.clientWidth / 3);
+        const tabla = container.querySelector('table');
+        if (tabla) {
+            const hoyPosition = (hoyPercent / 100) * tabla.offsetWidth;
+            container.scrollTo({ left: hoyPosition - (container.clientWidth / 3), behavior: 'smooth' });
+        }
     }
 }
 
