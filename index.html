@@ -4,7 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SIGME 2.0 - Visualizador de Programación</title>
+    
+    <!-- Estilo base -->
     <link rel="stylesheet" href="styles.css">
+    
+    <!-- Tema por defecto -->
+    <link rel="stylesheet" id="theme-stylesheet" href="styles-opcion1.css">
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
@@ -65,6 +71,24 @@
                 </button>
             </div>
             
+            <!-- Selector de Tema -->
+            <div class="sidebar-section theme-selector">
+                <label for="themeSelect"><i class="fas fa-palette"></i> Tema Visual</label>
+                <select id="themeSelect" onchange="cambiarTema(this.value)">
+                    <option value="styles-opcion1.css">🔵 Corporativo Clásico</option>
+                    <option value="styles-opcion2.css">⚫ Minimalista Monocromo</option>
+                    <option value="styles-opcion3.css">🟠 High Contrast</option>
+                    <option value="styles-opcion4.css">🌸 Pastel Suave</option>
+                    <option value="styles-opcion5.css">🌙 Dark Mode</option>
+                </select>
+                <div class="theme-preview" id="themePreview">
+                    <div class="preview-bar" style="background: #42A5F5;"></div>
+                    <div class="preview-bar" style="background: #FFA726;"></div>
+                    <div class="preview-bar" style="background: #66BB6A;"></div>
+                    <div class="preview-bar" style="background: #EF5350;"></div>
+                </div>
+            </div>
+            
             <div class="sidebar-footer">
                 <div class="view-selector">
                     <button class="view-btn active" onclick="cambiarVista('gantt')">
@@ -122,5 +146,43 @@
 
     <script src="gantt.js"></script>
     <script src="app.js"></script>
+    
+    <script>
+        // Función para cambiar el tema
+        function cambiarTema(tema) {
+            document.getElementById('theme-stylesheet').href = tema;
+            localStorage.setItem('sigme-tema', tema);
+            actualizarPreviewTema(tema);
+        }
+        
+        // Actualizar preview de colores según tema
+        function actualizarPreviewTema(tema) {
+            const preview = document.getElementById('themePreview');
+            const barras = preview.querySelectorAll('.preview-bar');
+            
+            const colores = {
+                'styles-opcion1.css': ['#42A5F5', '#FFA726', '#66BB6A', '#EF5350'],
+                'styles-opcion2.css': ['#616161', '#9E9E9E', '#424242', '#212121'],
+                'styles-opcion3.css': ['#2979FF', '#FF6D00', '#00C853', '#D50000'],
+                'styles-opcion4.css': ['#BBDEFB', '#FFE0B2', '#C8E6C9', '#FFCDD2'],
+                'styles-opcion5.css': ['#448AFF', '#FFAB40', '#69F0AE', '#FF5252']
+            };
+            
+            const nuevosColores = colores[tema] || colores['styles-opcion1.css'];
+            barras.forEach((barra, index) => {
+                barra.style.background = nuevosColores[index];
+            });
+        }
+        
+        // Cargar tema guardado al iniciar
+        window.addEventListener('DOMContentLoaded', function() {
+            const temaGuardado = localStorage.getItem('sigme-tema');
+            if (temaGuardado) {
+                document.getElementById('themeSelect').value = temaGuardado;
+                document.getElementById('theme-stylesheet').href = temaGuardado;
+                actualizarPreviewTema(temaGuardado);
+            }
+        });
+    </script>
 </body>
 </html>
