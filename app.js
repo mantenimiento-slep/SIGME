@@ -3,28 +3,26 @@ const SHEET_ID = '1_9ewqYv-o3O37ylPS6vxcGceBOQ1l4jB2VlM2T_4iSg';
 const SHEET_NAME = 'BBDD_OT';
 const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${SHEET_NAME}`;
 
-// Variables globales
 let todasLasOTs = [];
 let lineasUnicas = [];
 
-// Función para cargar datos
 async function cargarDatos() {
     const loadingSpinner = document.getElementById('loadingSpinner');
     const errorMessage = document.getElementById('errorMessage');
-    const dashboard = document.getElementById('dashboard');
+    const ganttView = document.getElementById('ganttView');
     
     try {
         loadingSpinner.style.display = 'block';
         errorMessage.style.display = 'none';
-        if (dashboard) dashboard.style.display = 'none';
+        ganttView.style.display = 'none';
         
         const response = await fetch(CSV_URL);
-        if (!response.ok) throw new Error('Error al cargar datos de Google Sheets');
+        if (!response.ok) throw new Error('Error al cargar datos');
         
         const csvText = await response.text();
         const datos = parseCSV(csvText);
         
-        if (datos.length === 0) throw new Error('No se encontraron datos en la hoja');
+        if (datos.length === 0) throw new Error('No se encontraron datos');
         
         todasLasOTs = procesarDatos(datos);
         lineasUnicas = [...new Set(todasLasOTs.map(ot => ot.lineaTrabajo))].filter(Boolean);
@@ -34,8 +32,21 @@ async function cargarDatos() {
         
         loadingSpinner.style.display = 'none';
         
-        // Inicializar vista Gantt por defecto
-        cambiarVista('gantt');
+        // Mostrar vista Gantt y renderizar
+        ganttView.style.display = 'block';
+        document.getElementById('tarjetasView').style.display = 'none';
+        
+        // Activar botón Gantt
+        const botones = document.querySelectorAll('.view-btn');
+        botones.forEach(btn => btn.classList.remove('active'));
+        if (botones[0]) botones[0].classList.add('active');
+        
+        // Renderizar Gantt
+        if (typeof inicializarGantt === 'function') {
+            inicializarGantt();
+        } else {
+            throw new Error('Función inicializarGantt no encontrada');
+        }
         
     } catch (error) {
         loadingSpinner.style.display = 'none';
@@ -45,15 +56,13 @@ async function cargarDatos() {
     }
 }
 
-// Parsear CSV
 function parseCSV(csvText) {
     const lineas = csvText.split('\n');
     const headers = lineas[0].split(',').map(h => h.trim().replace(/"/g, ''));
-    
     const datos = [];
+    
     for (let i = 1; i < lineas.length; i++) {
         if (!lineas[i].trim()) continue;
-        
         const valores = parsearLineaCSV(lineas[i]);
         const fila = {};
         headers.forEach((header, index) => {
@@ -61,11 +70,9 @@ function parseCSV(csvText) {
         });
         datos.push(fila);
     }
-    
     return datos;
 }
 
-// Parsear línea CSV respetando comillas
 function parsearLineaCSV(linea) {
     const resultado = [];
     let actual = '';
@@ -85,7 +92,6 @@ function parsearLineaCSV(linea) {
     return resultado;
 }
 
-// Procesar datos
 function procesarDatos(datos) {
     return datos.map(fila => ({
         numeroOT: fila['N° OT'] || '',
@@ -104,21 +110,17 @@ function procesarDatos(datos) {
     }));
 }
 
-// Actualizar estadísticas del header
 function actualizarEstadisticas() {
     document.getElementById('totalOT').innerHTML = `<i class="fas fa-clipboard-list"></i> ${todasLasOTs.length} OT`;
-    
     const recintosUnicos = new Set(todasLasOTs.map(ot => ot.nombreRecinto).filter(Boolean));
     document.getElementById('totalRecintos').innerHTML = `<i class="fas fa-school"></i> ${recintosUnicos.size} EE`;
 }
 
-// Llenar filtros
 function llenarFiltros() {
     const filterLinea = document.getElementById('filterLinea');
     const filterEstado = document.getElementById('filterEstado');
     const filterTipo = document.getElementById('filterTipo');
     
-    // Líneas de trabajo
     lineasUnicas.sort().forEach(linea => {
         const option = document.createElement('option');
         option.value = linea;
@@ -126,189 +128,23 @@ function llenarFiltros() {
         filterLinea.appendChild(option);
     });
     
-    // Estados
-    const estadosUnicos = [...new Set(todasLasOTs.map(ot => ot.estado))].sort();
+    const estadosUnicos = [...new Set(todasLasOTs.map(ot => ot.estado).filter(Boolean))].sort();
     estadosUnicos.forEach(estado => {
-        if (estado) {
-            const option = document.createElement('option');
-            option.value = estado;
-            option.textContent = estado;
-            filterEstado.appendChild(option);
-        }
+        const option = document.createElement('option');
+        option.value = estado;
+        option.textContent = estado;
+        filterEstado.appendChild(option);
     });
     
-    // Tipos de intervención
-    const tiposUnicos = [...new Set(todasLasOTs.map(ot => ot.tipoIntervencion))].sort();
+    const tiposUnicos = [...new Set(todasLasOTs.map(ot => ot.tipoIntervencion).filter(Boolean))].sort();
     tiposUnicos.forEach(tipo => {
-        if (tipo) {
-            const option = document.createElement('option');
-            option.value = tipo;
-            option.textContent = tipo;
-            filterTipo.appendChild(option);
-        }
+        const option = document.createElement('option');
+        option.value = tipo;
+        option.textContent = tipo;
+        filterTipo.appendChild(option);
     });
 }
 
-// Renderizar dashboard (vista de tarjetas)
-function renderizarDashboard() {
-    const tarjetasView = document.getElementById('tarjetasView');
-    if (!tarjetasView) return;
-    
-    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-    const lineaFiltro = document.getElementById('filterLinea').value;
-    const estadoFiltro = document.getElementById('filterEstado').value;
-    const tipoFiltro = document.getElementById('filterTipo').value;
-    
-    // Filtrar OTs
-    let otsFiltradas = todasLasOTs.filter(ot => {
-        const matchSearch = !searchTerm || 
-            ot.nombreRecinto.toLowerCase().includes(searchTerm) ||
-            ot.ito.toLowerCase().includes(searchTerm) ||
-            ot.numeroOT.toLowerCase().includes(searchTerm);
-        const matchLinea = !lineaFiltro || ot.lineaTrabajo === lineaFiltro;
-        const matchEstado = !estadoFiltro || ot.estado === estadoFiltro;
-        const matchTipo = !tipoFiltro || ot.tipoIntervencion === tipoFiltro;
-        
-        return matchSearch && matchLinea && matchEstado && matchTipo;
-    });
-    
-    // Agrupar por línea de trabajo
-    const lineasAMostrar = lineaFiltro ? [lineaFiltro] : lineasUnicas;
-    
-    tarjetasView.innerHTML = '';
-    
-    lineasAMostrar.forEach(linea => {
-        const otsDeLinea = otsFiltradas.filter(ot => ot.lineaTrabajo === linea);
-        if (otsDeLinea.length === 0) return;
-        
-        const lineaSection = crearLineaSection(linea, otsDeLinea);
-        tarjetasView.appendChild(lineaSection);
-    });
-    
-    if (tarjetasView.innerHTML === '') {
-        tarjetasView.innerHTML = '<div class="error"><i class="fas fa-search"></i><p>No se encontraron resultados con los filtros actuales</p></div>';
-    }
-}
-
-// Crear sección de línea de trabajo
-function crearLineaSection(linea, ots) {
-    const section = document.createElement('div');
-    section.className = 'linea-section';
-    
-    const recintosUnicos = new Set(ots.map(ot => ot.nombreRecinto));
-    const presupuestoTotal = ots.reduce((sum, ot) => {
-        const presupuesto = parseFloat(ot.presupuesto.replace(/[^0-9.-]+/g, '')) || 0;
-        return sum + presupuesto;
-    }, 0);
-    
-    // Calcular progreso
-    const completadas = ots.filter(ot => ot.estado.toLowerCase().includes('complet')).length;
-    const progreso = ots.length > 0 ? Math.round((completadas / ots.length) * 100) : 0;
-    
-    section.innerHTML = `
-        <div class="linea-header" onclick="toggleLinea(this)">
-            <div>
-                <h2><i class="fas fa-layer-group"></i> ${linea}</h2>
-                <div class="linea-stats">
-                    <span><i class="fas fa-clipboard-list"></i> ${ots.length} OT</span>
-                    <span><i class="fas fa-school"></i> ${recintosUnicos.size} EE</span>
-                    <span><i class="fas fa-dollar-sign"></i> ${formatearPresupuesto(presupuestoTotal)}</span>
-                </div>
-            </div>
-            <div style="text-align: right;">
-                <div class="progress-bar" style="width: 200px;">
-                    <div class="progress-fill" style="width: ${progreso}%"></div>
-                </div>
-                <small style="font-size: 0.8rem; color: var(--text-secondary);">${progreso}% completado</small>
-            </div>
-        </div>
-        <div class="ots-grid">
-            ${ots.map(ot => crearOTCard(ot)).join('')}
-        </div>
-    `;
-    
-    return section;
-}
-
-// Crear tarjeta de OT
-function crearOTCard(ot) {
-    const estadoClass = `estado-${ot.estado.toLowerCase().replace(/\s+/g, '-')}`;
-    const presupuesto = parseFloat(ot.presupuesto.replace(/[^0-9.-]+/g, '')) || 0;
-    
-    return `
-        <div class="ot-card">
-            <div class="ot-header">
-                <span class="ot-number">OT #${ot.numeroOT}</span>
-                <span class="estado-badge ${estadoClass}">${ot.estado}</span>
-            </div>
-            
-            <div class="ot-recinto">
-                <i class="fas fa-school"></i>
-                ${ot.nombreRecinto}
-            </div>
-            
-            <div class="ot-details">
-                <div class="ot-detail">
-                    <i class="fas fa-user-tie"></i>
-                    <span>ITO: ${ot.ito}</span>
-                </div>
-                <div class="ot-detail">
-                    <i class="fas fa-building"></i>
-                    <span>${ot.tipoRecinto}</span>
-                </div>
-                <div class="ot-detail">
-                    <i class="fas fa-tools"></i>
-                    <span>${ot.tipoIntervencion}</span>
-                </div>
-                <div class="ot-detail">
-                    <i class="fas fa-calendar-alt"></i>
-                    <span>Visita: ${ot.fechaVisita || 'N/D'}</span>
-                </div>
-                <div class="ot-detail">
-                    <i class="fas fa-calendar-check"></i>
-                    <span>Inicio: ${ot.fechaInicio || 'N/D'}</span>
-                </div>
-                <div class="ot-detail">
-                    <i class="fas fa-calendar-times"></i>
-                    <span>Fin: ${ot.fechaFin || 'N/D'}</span>
-                </div>
-            </div>
-            
-            <div class="ot-footer">
-                <span class="presupuesto">
-                    <i class="fas fa-money-bill-wave"></i>
-                    ${formatearPresupuesto(presupuesto)}
-                </span>
-                <span>
-                    <i class="fas fa-file-invoice"></i>
-                    EP: ${ot.numeroEP || 'N/A'}
-                </span>
-            </div>
-        </div>
-    `;
-}
-
-// Formatear presupuesto
-function formatearPresupuesto(monto) {
-    return new Intl.NumberFormat('es-CL', {
-        style: 'currency',
-        currency: 'CLP',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-    }).format(monto);
-}
-
-// Toggle línea
-function toggleLinea(header) {
-    const grid = header.nextElementSibling;
-    if (grid.style.display === 'none') {
-        grid.style.display = 'grid';
-    } else {
-        grid.style.display = 'none';
-    }
-}
-
-// Cambiar vista entre Gantt y Tarjetas
 function cambiarVista(vista) {
     const ganttView = document.getElementById('ganttView');
     const tarjetasView = document.getElementById('tarjetasView');
@@ -319,48 +155,44 @@ function cambiarVista(vista) {
     if (vista === 'gantt') {
         ganttView.style.display = 'block';
         tarjetasView.style.display = 'none';
-        document.querySelector('.view-btn:nth-child(1)').classList.add('active');
-        inicializarGantt();
+        if (botones[0]) botones[0].classList.add('active');
+        if (todasLasOTs.length > 0 && typeof inicializarGantt === 'function') {
+            inicializarGantt();
+        }
     } else {
         ganttView.style.display = 'none';
         tarjetasView.style.display = 'block';
-        document.querySelector('.view-btn:nth-child(2)').classList.add('active');
-        renderizarDashboard();
+        if (botones[1]) botones[1].classList.add('active');
     }
 }
 
 // Event listeners
 document.getElementById('searchInput').addEventListener('input', function() {
-    if (document.getElementById('ganttView').style.display !== 'none') {
+    if (document.getElementById('ganttView').style.display !== 'none' && typeof renderizarGantt === 'function') {
         renderizarGantt();
-    } else {
-        renderizarDashboard();
     }
 });
 
 document.getElementById('filterLinea').addEventListener('change', function() {
-    if (document.getElementById('ganttView').style.display !== 'none') {
+    if (document.getElementById('ganttView').style.display !== 'none' && typeof renderizarGantt === 'function') {
         renderizarGantt();
-    } else {
-        renderizarDashboard();
     }
 });
 
 document.getElementById('filterEstado').addEventListener('change', function() {
-    if (document.getElementById('ganttView').style.display !== 'none') {
+    if (document.getElementById('ganttView').style.display !== 'none' && typeof renderizarGantt === 'function') {
         renderizarGantt();
-    } else {
-        renderizarDashboard();
     }
 });
 
 document.getElementById('filterTipo').addEventListener('change', function() {
-    if (document.getElementById('ganttView').style.display !== 'none') {
+    if (document.getElementById('ganttView').style.display !== 'none' && typeof renderizarGantt === 'function') {
         renderizarGantt();
-    } else {
-        renderizarDashboard();
     }
 });
 
-// Cargar datos al iniciar
-window.addEventListener('DOMContentLoaded', cargarDatos);
+// Iniciar cuando TODO esté listo
+window.addEventListener('load', function() {
+    console.log('SIGME 2.0 - Iniciando carga de datos...');
+    cargarDatos();
+});
