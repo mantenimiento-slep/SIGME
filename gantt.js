@@ -1,7 +1,59 @@
-// Módulo de Carta Gantt para SIGME 2.0 - VERSIÓN PRUEBA ACOTADA
+// Módulo de Carta Gantt para SIGME 2.0
 
 let zoomLevel = 1;
 let ganttData = [];
+
+// Función para parsear fecha en formato DD.MM.YYYY
+function parsearFecha(fechaStr) {
+    if (!fechaStr) return null;
+    
+    // Limpiar la fecha
+    fechaStr = fechaStr.trim();
+    
+    // Formato DD.MM.YYYY
+    const partes = fechaStr.split('.');
+    if (partes.length === 3) {
+        const dia = parseInt(partes[0], 10);
+        const mes = parseInt(partes[1], 10) - 1; // Meses en JS van de 0-11
+        const año = parseInt(partes[2], 10);
+        
+        if (!isNaN(dia) && !isNaN(mes) && !isNaN(año)) {
+            return new Date(año, mes, dia);
+        }
+    }
+    
+    // Formato DD/MM/YYYY (alternativo)
+    const partes2 = fechaStr.split('/');
+    if (partes2.length === 3) {
+        const dia = parseInt(partes2[0], 10);
+        const mes = parseInt(partes2[1], 10) - 1;
+        const año = parseInt(partes2[2], 10);
+        
+        if (!isNaN(dia) && !isNaN(mes) && !isNaN(año)) {
+            return new Date(año, mes, dia);
+        }
+    }
+    
+    console.warn('No se pudo parsear fecha:', fechaStr);
+    return null;
+}
+
+// Calcular días hábiles entre dos fechas
+function diasHabiles(fechaInicio, fechaFin) {
+    let inicio = new Date(fechaInicio);
+    let fin = new Date(fechaFin);
+    let dias = 0;
+    
+    while (inicio <= fin) {
+        const dia = inicio.getDay();
+        if (dia !== 0 && dia !== 6) { // No domingo (0) ni sábado (6)
+            dias++;
+        }
+        inicio.setDate(inicio.getDate() + 1);
+    }
+    
+    return dias;
+}
 
 function inicializarGantt() {
     ganttData = todasLasOTs.filter(ot => ot.fechaInicio && ot.fechaFin);
@@ -23,10 +75,10 @@ function renderizarGantt() {
     hoy.setHours(0, 0, 0, 0);
     
     const fechaInicio = new Date(hoy);
-    fechaInicio.setDate(fechaInicio.getDate() - 21); // 3 semanas atrás
+    fechaInicio.setDate(fechaInicio.getDate() - 21);
     
     const fechaFin = new Date(hoy);
-    fechaFin.setDate(fechaFin.getDate() + 56); // 8 semanas adelante
+    fechaFin.setDate(fechaFin.getDate() + 56);
     
     // Aplicar filtros
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
@@ -35,16 +87,15 @@ function renderizarGantt() {
     const tipoFiltro = document.getElementById('filterTipo').value;
     
     let otsFiltradas = ganttData.filter(ot => {
-        const inicio = new Date(ot.fechaInicio);
-        const fin = new Date(ot.fechaFin);
+        const inicio = parsearFecha(ot.fechaInicio);
+        const fin = parsearFecha(ot.fechaFin);
         
-        if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) return false;
+        if (!inicio || !fin) return false;
         
-        // PRUEBA: Solo líneas 1 y 2
+        // Solo líneas 1 y 2 para prueba
         const linea = ot.lineaTrabajo || '';
         if (!linea.includes('Línea 1') && !linea.includes('Línea 2') && 
-            !linea.includes('LINEA 1') && !linea.includes('LINEA 2') &&
-            !linea.includes('Línea1') && !linea.includes('Línea2')) {
+            !linea.includes('LINEA 1') && !linea.includes('LINEA 2')) {
             return false;
         }
         
@@ -94,9 +145,9 @@ function renderizarGantt() {
     });
     
     // Construir HTML
-    let html = '<div style="overflow-x: auto;">';
+    let html = '<div style="overflow-x: auto; position: relative;" id="ganttScrollContainer">';
     html += `<div style="padding: 8px; background: #e8f5e9; font-size: 0.85rem; margin-bottom: 8px; border-radius: 4px;">
-        📅 Mostrando: <strong>${formatearFecha(fechaInicio)}</strong> al <strong>${formatearFecha(fechaFin)}</strong> | 
+        📅 Período: <strong>${formatearFecha(fechaInicio)}</strong> al <strong>${formatearFecha(fechaFin)}</strong> | 
         Líneas 1 y 2 | ${otsFiltradas.length} OT encontradas
     </div>`;
     
@@ -122,18 +173,15 @@ function renderizarGantt() {
     columnas.forEach(fecha => {
         const esFinde = fecha.getDay() === 0 || fecha.getDay() === 6;
         const esHoy = fecha.toDateString() === hoy.toDateString();
-        let clase = '';
         let estilo = '';
         
         if (esHoy) {
-            clase = 'today-column';
             estilo = 'background: #ffeb3b; font-weight: bold;';
         } else if (esFinde) {
-            clase = 'weekend';
             estilo = 'background: #f5f5f5;';
         }
         
-        html += `<th class="${clase}" style="${estilo} padding: 4px; text-align: center; font-size: 0.75rem;">${fecha.getDate()}<br><small>${['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'][fecha.getDay()]}</small></th>`;
+        html += `<th style="${estilo} padding: 4px; text-align: center; font-size: 0.75rem;">${fecha.getDate()}<br><small>${['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'][fecha.getDay()]}</small></th>`;
     });
     
     html += '</tr></thead><tbody>';
@@ -152,17 +200,13 @@ function renderizarGantt() {
         
         // Barras por OT
         ots.forEach((ot, index) => {
-            const inicio = new Date(ot.fechaInicio);
-            const fin = new Date(ot.fechaFin);
+            const inicio = parsearFecha(ot.fechaInicio);
+            const fin = parsearFecha(ot.fechaFin);
             
-            if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) return;
+            if (!inicio || !fin) return;
             
-            // Ajustar al rango visible
-            const inicioVisible = inicio < fechaInicio ? fechaInicio : inicio;
-            const finVisible = fin > fechaFin ? fechaFin : fin;
-            
-            const inicioOffset = (inicioVisible - fechaInicio) / (1000 * 60 * 60 * 24);
-            const duracion = Math.max((finVisible - inicioVisible) / (1000 * 60 * 60 * 24) + 1, 1);
+            const inicioOffset = (inicio - fechaInicio) / (1000 * 60 * 60 * 24);
+            const duracion = Math.max((fin - inicio) / (1000 * 60 * 60 * 24) + 1, 1);
             
             const leftPercent = (inicioOffset / totalDias) * 100;
             const widthPercent = (duracion / totalDias) * 100;
@@ -173,7 +217,7 @@ function renderizarGantt() {
             
             const topPosition = (index * 36) + 4;
             
-            // Color más suave para los estados
+            // Colores por estado
             const colores = {
                 'programada': '#42a5f5',
                 'en-proceso': '#ffa726',
@@ -184,14 +228,50 @@ function renderizarGantt() {
             
             const color = colores[estadoClass] || '#78909c';
             
-            const tooltip = `OT #${ot.numeroOT}\n🏫 ${ot.nombreRecinto}\n🔧 ${ot.tipoIntervencion}\n📅 ${ot.fechaInicio} → ${ot.fechaFin}\n📊 ${ot.estado}\n👷 ${ot.ito}\n💰 ${ot.presupuesto}`;
+            // Calcular días hábiles
+            const duracionHabiles = diasHabiles(inicio, fin);
             
-            html += `<div class="gantt-bar-v2" 
+            // Formatear presupuesto
+            const presupuestoNum = parseFloat(String(ot.presupuesto).replace(/[^0-9.-]+/g, '')) || 0;
+            const presupuestoFormateado = new Intl.NumberFormat('es-CL', {
+                style: 'currency',
+                currency: 'CLP',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(presupuestoNum);
+            
+            // Tooltip HTML
+            const tooltipHTML = `<div style="font-family: 'Segoe UI', sans-serif; padding: 10px; min-width: 280px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <strong style="font-size: 1rem; color: #1a237e;">${ot.nombreRecinto}</strong>
+                    <strong style="font-size: 1rem; color: #1565c0;">OT ${ot.numeroOT}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #e0e0e0;">
+                    <span><i class="fas fa-user"></i> ${ot.ito}</span>
+                    <span style="font-weight: bold; color: #ED56A1; font-size: 1.1rem;">${duracionHabiles}d</span>
+                </div>
+                <div style="margin-bottom: 8px; font-size: 0.9rem;">
+                    <i class="fas fa-calendar"></i> ${ot.fechaInicio} → ${ot.fechaFin}
+                </div>
+                <div style="margin-bottom: 8px; padding: 6px; background: #f5f5f5; border-radius: 4px;">
+                    <strong style="font-size: 0.85rem; color: #333;">TIPO INTERVENCIÓN</strong><br>
+                    <span style="font-size: 0.9rem;">${ot.tipoIntervencion}</span>
+                </div>
+                <div style="text-align: right; font-weight: bold; font-size: 1rem; color: #2e7d32;">
+                    Total: ${presupuestoFormateado}
+                </div>
+            </div>`;
+            
+            // Escape del HTML para el atributo data
+            const tooltipEscaped = tooltipHTML.replace(/"/g, '&quot;').replace(/'/g, "&#39;");
+            
+            html += `<div class="gantt-bar-v2 gantt-tooltip-trigger" 
                 style="left: ${leftPercent}%; width: ${Math.max(widthPercent, 0.2)}%; top: ${topPosition}px; position: absolute; background: ${color};"
-                title="${tooltip.replace(/"/g, '&quot;').replace(/\n/g, '&#10;')}"
-                onclick="alert('${tooltip.replace(/'/g, "\\'").replace(/\n/g, '\\n')}')">
-                <span style="font-weight: bold; font-size: 0.7rem;">${ot.numeroOT}</span>
-                <span style="margin-left: 6px; font-size: 0.65rem; opacity: 0.9;">${ot.nombreRecinto}</span>
+                data-tooltip="${tooltipEscaped}"
+                data-ot='${JSON.stringify(ot).replace(/'/g, "&#39;")}'>
+                <span style="font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    ${ot.numeroOT} · ${ot.nombreRecinto}
+                </span>
             </div>`;
         });
         
@@ -199,16 +279,77 @@ function renderizarGantt() {
         html += `<tr><td colspan="${columnas.length + 1}" style="padding: 0; height: 6px; background: #e0e0e0;"></td></tr>`;
     });
     
-    html += '</tbody></table></div>';
+    html += '</tbody></table>';
     
-    // Marcador de HOY
-    if (hoy >= fechaInicio && hoy <= fechaFin) {
-        const hoyOffset = (hoy - fechaInicio) / (1000 * 60 * 60 * 24);
-        const hoyPercent = (hoyOffset / totalDias) * 100;
-        html += `<div class="today-marker" style="left: ${hoyPercent}%; top: 100px; bottom: 0;"></div>`;
-    }
+    // Marcador de HOY (línea vertical roja)
+    const hoyOffset = (hoy - fechaInicio) / (1000 * 60 * 60 * 24);
+    const hoyPercent = (hoyOffset / totalDias) * 100;
+    html += `<div class="today-line" style="left: ${hoyPercent}%;">HOY</div>`;
+    
+    html += '</div>';
     
     ganttChart.innerHTML = html;
+    
+    // Centrar en HOY
+    setTimeout(() => {
+        const container = document.getElementById('ganttScrollContainer');
+        if (container) {
+            const hoyPosition = (hoyPercent / 100) * container.scrollWidth;
+            container.scrollLeft = hoyPosition - (container.clientWidth / 3);
+        }
+    }, 100);
+    
+    // Inicializar tooltips
+    inicializarTooltips();
+}
+
+// Tooltips personalizados
+function inicializarTooltips() {
+    // Eliminar tooltips existentes
+    const existingTooltip = document.getElementById('gantt-custom-tooltip');
+    if (existingTooltip) existingTooltip.remove();
+    
+    // Crear tooltip único
+    const tooltip = document.createElement('div');
+    tooltip.id = 'gantt-custom-tooltip';
+    tooltip.style.cssText = `
+        position: fixed;
+        background: white;
+        border: 2px solid #e0e0e0;
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        padding: 0;
+        z-index: 10000;
+        display: none;
+        pointer-events: none;
+        max-width: 380px;
+    `;
+    document.body.appendChild(tooltip);
+    
+    document.querySelectorAll('.gantt-tooltip-trigger').forEach(bar => {
+        bar.addEventListener('mouseenter', function(e) {
+            const tooltipHTML = this.getAttribute('data-tooltip');
+            tooltip.innerHTML = tooltipHTML;
+            tooltip.style.display = 'block';
+            
+            // Posicionar tooltip
+            const rect = this.getBoundingClientRect();
+            let left = rect.left + rect.width / 2;
+            let top = rect.bottom + 10;
+            
+            // Ajustar si se sale de la pantalla
+            if (left + 190 > window.innerWidth) left = window.innerWidth - 390;
+            if (top + 200 > window.innerHeight) top = rect.top - 210;
+            if (left < 10) left = 10;
+            
+            tooltip.style.left = left + 'px';
+            tooltip.style.top = top + 'px';
+        });
+        
+        bar.addEventListener('mouseleave', function() {
+            tooltip.style.display = 'none';
+        });
+    });
 }
 
 function zoomGantt(direction) {
@@ -217,15 +358,30 @@ function zoomGantt(direction) {
 }
 
 function scrollGantt(direction) {
-    const ganttChart = document.getElementById('ganttChart');
+    const container = document.getElementById('ganttScrollContainer');
+    if (!container) return;
+    
     const scrollAmount = 400;
     
     if (direction === 'left') {
-        ganttChart.scrollLeft -= scrollAmount;
+        container.scrollLeft -= scrollAmount;
     } else if (direction === 'right') {
-        ganttChart.scrollLeft += scrollAmount;
+        container.scrollLeft += scrollAmount;
     } else if (direction === 'today') {
-        ganttChart.scrollLeft = ganttChart.scrollWidth / 3;
+        // Centrar en HOY
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+        const fechaInicio = new Date(hoy);
+        fechaInicio.setDate(fechaInicio.getDate() - 21);
+        const fechaFin = new Date(hoy);
+        fechaFin.setDate(fechaFin.getDate() + 56);
+        
+        const totalDias = (fechaFin - fechaInicio) / (1000 * 60 * 60 * 24);
+        const hoyOffset = (hoy - fechaInicio) / (1000 * 60 * 60 * 24);
+        const hoyPercent = (hoyOffset / totalDias) * 100;
+        
+        const hoyPosition = (hoyPercent / 100) * container.scrollWidth;
+        container.scrollLeft = hoyPosition - (container.clientWidth / 3);
     }
 }
 
