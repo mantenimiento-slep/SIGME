@@ -16,7 +16,7 @@ async function cargarDatos() {
     try {
         loadingSpinner.style.display = 'block';
         errorMessage.style.display = 'none';
-        dashboard.style.display = 'none';
+        if (dashboard) dashboard.style.display = 'none';
         
         const response = await fetch(CSV_URL);
         if (!response.ok) throw new Error('Error al cargar datos de Google Sheets');
@@ -31,10 +31,11 @@ async function cargarDatos() {
         
         actualizarEstadisticas();
         llenarFiltros();
-        renderizarDashboard();
         
         loadingSpinner.style.display = 'none';
-        dashboard.style.display = 'block';
+        
+        // Inicializar vista Gantt por defecto
+        cambiarVista('gantt');
         
     } catch (error) {
         loadingSpinner.style.display = 'none';
@@ -84,7 +85,7 @@ function parsearLineaCSV(linea) {
     return resultado;
 }
 
-// Procesar datos - CORREGIDO para MAYÚSCULAS
+// Procesar datos
 function procesarDatos(datos) {
     return datos.map(fila => ({
         numeroOT: fila['N° OT'] || '',
@@ -148,9 +149,11 @@ function llenarFiltros() {
     });
 }
 
-// Renderizar dashboard
+// Renderizar dashboard (vista de tarjetas)
 function renderizarDashboard() {
-    const dashboard = document.getElementById('dashboard');
+    const tarjetasView = document.getElementById('tarjetasView');
+    if (!tarjetasView) return;
+    
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
     const lineaFiltro = document.getElementById('filterLinea').value;
     const estadoFiltro = document.getElementById('filterEstado').value;
@@ -172,18 +175,18 @@ function renderizarDashboard() {
     // Agrupar por línea de trabajo
     const lineasAMostrar = lineaFiltro ? [lineaFiltro] : lineasUnicas;
     
-    dashboard.innerHTML = '';
+    tarjetasView.innerHTML = '';
     
     lineasAMostrar.forEach(linea => {
         const otsDeLinea = otsFiltradas.filter(ot => ot.lineaTrabajo === linea);
         if (otsDeLinea.length === 0) return;
         
         const lineaSection = crearLineaSection(linea, otsDeLinea);
-        dashboard.appendChild(lineaSection);
+        tarjetasView.appendChild(lineaSection);
     });
     
-    if (dashboard.innerHTML === '') {
-        dashboard.innerHTML = '<div class="error"><i class="fas fa-search"></i><p>No se encontraron resultados con los filtros actuales</p></div>';
+    if (tarjetasView.innerHTML === '') {
+        tarjetasView.innerHTML = '<div class="error"><i class="fas fa-search"></i><p>No se encontraron resultados con los filtros actuales</p></div>';
     }
 }
 
@@ -305,11 +308,59 @@ function toggleLinea(header) {
     }
 }
 
+// Cambiar vista entre Gantt y Tarjetas
+function cambiarVista(vista) {
+    const ganttView = document.getElementById('ganttView');
+    const tarjetasView = document.getElementById('tarjetasView');
+    const botones = document.querySelectorAll('.view-btn');
+    
+    botones.forEach(btn => btn.classList.remove('active'));
+    
+    if (vista === 'gantt') {
+        ganttView.style.display = 'block';
+        tarjetasView.style.display = 'none';
+        document.querySelector('.view-btn:nth-child(1)').classList.add('active');
+        inicializarGantt();
+    } else {
+        ganttView.style.display = 'none';
+        tarjetasView.style.display = 'block';
+        document.querySelector('.view-btn:nth-child(2)').classList.add('active');
+        renderizarDashboard();
+    }
+}
+
 // Event listeners
-document.getElementById('searchInput').addEventListener('input', renderizarDashboard);
-document.getElementById('filterLinea').addEventListener('change', renderizarDashboard);
-document.getElementById('filterEstado').addEventListener('change', renderizarDashboard);
-document.getElementById('filterTipo').addEventListener('change', renderizarDashboard);
+document.getElementById('searchInput').addEventListener('input', function() {
+    if (document.getElementById('ganttView').style.display !== 'none') {
+        renderizarGantt();
+    } else {
+        renderizarDashboard();
+    }
+});
+
+document.getElementById('filterLinea').addEventListener('change', function() {
+    if (document.getElementById('ganttView').style.display !== 'none') {
+        renderizarGantt();
+    } else {
+        renderizarDashboard();
+    }
+});
+
+document.getElementById('filterEstado').addEventListener('change', function() {
+    if (document.getElementById('ganttView').style.display !== 'none') {
+        renderizarGantt();
+    } else {
+        renderizarDashboard();
+    }
+});
+
+document.getElementById('filterTipo').addEventListener('change', function() {
+    if (document.getElementById('ganttView').style.display !== 'none') {
+        renderizarGantt();
+    } else {
+        renderizarDashboard();
+    }
+});
 
 // Cargar datos al iniciar
 window.addEventListener('DOMContentLoaded', cargarDatos);
