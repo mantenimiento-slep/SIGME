@@ -1,0 +1,60 @@
+/* Opción 3 - High Contrast */
+.gantt-table {
+    border-collapse: collapse;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+.gantt-table thead th {
+    background: #000000;
+    color: #FFFFFF;
+    padding: 8px 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border: 2px solid #000000;
+    text-transform: uppercase;
+}
+
+.gantt-table .col-recinto {
+    background: white;
+    border-right: 3px solid #000000;
+    font-weight: 700;
+    color: #000000;
+}
+
+.gantt-table tbody tr td {
+    background: white;
+    border: 2px solid #CCCCCC;
+}
+
+.linea-row td:first-child {
+    background: #FFF9C4 !important;
+    border-bottom: 3px solid #000000;
+    font-weight: 700;
+    color: #000000;
+}
+
+.gantt-bar-chevron {
+    height: 28px;
+    clip-path: polygon(0% 0%, calc(100% - 10px) 0%, 100% 50%, calc(100% - 10px) 100%, 0% 100%);
+    font-weight: 700;
+    font-size: 0.75rem;
+    box-shadow: 2px 2px 0px rgba(0,0,0,0.3);
+}
+
+/* Colores vibrantes */
+.gantt-bar-chevron[style*="42A5F5"] { background: #2979FF !important; }
+.gantt-bar-chevron[style*="FFA726"] { background: #FF6D00 !important; }
+.gantt-bar-chevron[style*="66BB6A"] { background: #00C853 !important; }
+.gantt-bar-chevron[style*="EF5350"] { background: #D50000 !important; }
+
+.today-line {
+    background: #FF0000;
+    width: 3px;
+}
+
+.today-line::before {
+    background: #FF0000;
+    font-weight: 700;
+    font-size: 0.7rem;
+    padding: 3px 8px;
+}
