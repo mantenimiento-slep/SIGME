@@ -652,3 +652,60 @@ body {
 .gantt-bar[title] {
     position: relative;
 }
+/* Estilos mejorados para Gantt v2 */
+.gantt-bar-v2 {
+    height: 30px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    min-width: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    font-family: 'Segoe UI', sans-serif;
+}
+
+.gantt-bar-v2:hover {
+    opacity: 0.95;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    z-index: 100;
+    height: auto;
+    min-height: 30px;
+}
+
+.today-column {
+    background: #fff9c4 !important;
+    border-left: 2px solid #f9a825 !important;
+    border-right: 2px solid #f9a825 !important;
+}
+
+/* Mejoras visuales generales */
+.gantt-table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.gantt-table th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: #f5f5f5;
+}
+
+.gantt-table .col-recinto {
+    position: sticky;
+    left: 0;
+    z-index: 5;
+    background: white;
+}
+
+.gantt-table thead .col-recinto {
+    z-index: 15;
+    background: #f5f5f5;
+}
