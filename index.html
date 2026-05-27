@@ -22,6 +22,16 @@
     </header>
 
     <main class="container">
+        <!-- Selector de vista -->
+        <div class="view-selector">
+            <button class="view-btn active" onclick="cambiarVista('gantt')">
+                <i class="fas fa-chart-gantt"></i> Carta Gantt
+            </button>
+            <button class="view-btn" onclick="cambiarVista('tarjetas')">
+                <i class="fas fa-th-large"></i> Tarjetas
+            </button>
+        </div>
+
         <div class="controls">
             <div class="search-box">
                 <i class="fas fa-search"></i>
@@ -50,7 +60,30 @@
             <p id="errorText"></p>
         </div>
 
-        <div id="dashboard" style="display: none;">
+        <!-- Vista de Carta Gantt -->
+        <div id="ganttView" class="gantt-container" style="display: none;">
+            <div class="gantt-toolbar">
+                <div class="gantt-legend">
+                    <span class="legend-item"><span class="legend-color" style="background: #1a73e8;"></span> Programada</span>
+                    <span class="legend-item"><span class="legend-color" style="background: #f4b400;"></span> En Proceso</span>
+                    <span class="legend-item"><span class="legend-color" style="background: #0f9d58;"></span> Completada</span>
+                    <span class="legend-item"><span class="legend-color" style="background: #db4437;"></span> Cancelada</span>
+                </div>
+                <div class="gantt-navigation">
+                    <button onclick="zoomGantt(-1)" title="Zoom out"><i class="fas fa-search-minus"></i></button>
+                    <button onclick="zoomGantt(1)" title="Zoom in"><i class="fas fa-search-plus"></i></button>
+                    <button onclick="scrollGantt('left')" title="Anterior"><i class="fas fa-chevron-left"></i></button>
+                    <button onclick="scrollGantt('today')" title="Hoy"><i class="fas fa-calendar-day"></i> Hoy</button>
+                    <button onclick="scrollGantt('right')" title="Siguiente"><i class="fas fa-chevron-right"></i></button>
+                </div>
+            </div>
+            <div class="gantt-chart" id="ganttChart">
+                <!-- Se llena dinámicamente -->
+            </div>
+        </div>
+
+        <!-- Vista de Tarjetas (original) -->
+        <div id="tarjetasView" style="display: none;">
             <!-- Se llena dinámicamente -->
         </div>
     </main>
