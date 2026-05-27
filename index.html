@@ -37,17 +37,15 @@
                 <i class="fas fa-search"></i>
                 <input type="text" id="searchInput" placeholder="Buscar por establecimiento, ITO o N° OT...">
             </div>
-            <div class="filters">
-                <select id="filterLinea">
-                    <option value="">Todas las líneas de trabajo</option>
-                </select>
-                <select id="filterEstado">
-                    <option value="">Todos los estados</option>
-                </select>
-                <select id="filterTipo">
-                    <option value="">Todos los tipos de intervención</option>
-                </select>
-            </div>
+        <div class="filters">
+            <select id="filterLinea">
+                <option value="">Todas las líneas de trabajo</option>
+            </select>
+            <select id="filterEstado">
+                <option value="">Todos los estados</option>
+            </select>
+            <input type="text" id="filterRecinto" placeholder="🔍 Buscar establecimiento..." style="padding: 0.75rem 1rem; border: 2px solid var(--border); border-radius: 8px; font-size: 0.9rem; min-width: 250px;">
+        </div>
         </div>
 
         <div id="loadingSpinner" class="loading">
