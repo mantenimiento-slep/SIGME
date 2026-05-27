@@ -408,3 +408,45 @@ body {
         height: auto;
     }
 }
+/* Asegurar que el contenedor Gantt tenga scroll */
+.gantt-chart {
+    flex: 1;
+    overflow: auto !important;
+    position: relative;
+    min-height: 0;
+}
+
+#ganttScrollContainer {
+    overflow: auto !important;
+    height: 100%;
+    min-height: 0;
+}
+
+/* Forzar que se muestre el scroll horizontal */
+.gantt-table {
+    min-width: 1500px;
+}
+
+/* Scrollbars visibles */
+.gantt-chart::-webkit-scrollbar,
+#ganttScrollContainer::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+.gantt-chart::-webkit-scrollbar-track,
+#ganttScrollContainer::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 5px;
+}
+
+.gantt-chart::-webkit-scrollbar-thumb,
+#ganttScrollContainer::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 5px;
+}
+
+.gantt-chart::-webkit-scrollbar-thumb:hover,
+#ganttScrollContainer::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
