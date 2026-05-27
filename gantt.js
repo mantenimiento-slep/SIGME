@@ -13,6 +13,8 @@ function inicializarGantt() {
 function renderizarGantt() {
     const ganttChart = document.getElementById('ganttChart');
     
+    if (!ganttChart) return;
+    
     if (ganttData.length === 0) {
         ganttChart.innerHTML = '<div class="error"><i class="fas fa-exclamation-triangle"></i><p>No hay OTs con fechas definidas para mostrar en la carta Gantt</p></div>';
         return;
@@ -36,6 +38,11 @@ function renderizarGantt() {
         return matchSearch && matchLinea && matchEstado && matchTipo;
     });
     
+    if (otsFiltradas.length === 0) {
+        ganttChart.innerHTML = '<div class="error"><i class="fas fa-search"></i><p>No se encontraron OTs con los filtros actuales</p></div>';
+        return;
+    }
+    
     // Ordenar por línea de trabajo y recinto
     otsFiltradas.sort((a, b) => {
         if (a.lineaTrabajo !== b.lineaTrabajo) return a.lineaTrabajo.localeCompare(b.lineaTrabajo);
@@ -43,13 +50,23 @@ function renderizarGantt() {
     });
     
     // Calcular rango de fechas
-    const fechas = otsFiltradas.flatMap(ot => [new Date(ot.fechaInicio), new Date(ot.fechaFin)]);
+    const fechas = otsFiltradas.flatMap(ot => {
+        const inicio = new Date(ot.fechaInicio);
+        const fin = new Date(ot.fechaFin);
+        return isNaN(inicio.getTime()) || isNaN(fin.getTime()) ? [] : [inicio, fin];
+    });
+    
+    if (fechas.length === 0) {
+        ganttChart.innerHTML = '<div class="error"><i class="fas fa-exclamation-triangle"></i><p>Las fechas de las OTs no tienen un formato válido</p></div>';
+        return;
+    }
+    
     const minFecha = new Date(Math.min(...fechas));
     const maxFecha = new Date(Math.max(...fechas));
     
     // Extender rango para mostrar meses completos
-    minFecha.setDate(1); // Primer día del mes
-    maxFecha.setMonth(maxFecha.getMonth() + 1, 0); // Último día del mes
+    minFecha.setDate(1);
+    maxFecha.setMonth(maxFecha.getMonth() + 1, 0);
     
     // Generar columnas de días
     const columnas = [];
@@ -62,14 +79,16 @@ function renderizarGantt() {
     // Agrupar por línea de trabajo
     const grupos = {};
     otsFiltradas.forEach(ot => {
-        if (!grupos[ot.lineaTrabajo]) {
-            grupos[ot.lineaTrabajo] = [];
+        const linea = ot.lineaTrabajo || 'Sin línea';
+        if (!grupos[linea]) {
+            grupos[linea] = [];
         }
-        grupos[ot.lineaTrabajo].push(ot);
+        grupos[linea].push(ot);
     });
     
-    // Construir tabla
-    let html = '<table class="gantt-table"><thead><tr><th class="col-recinto">Establecimiento / Línea</th>';
+    // Construir tabla HTML
+    let html = '<div style="overflow-x: auto;">';
+    html += '<table class="gantt-table"><thead><tr><th class="col-recinto">Establecimiento / Línea</th>';
     
     // Headers de meses
     const meses = {};
@@ -106,10 +125,11 @@ function renderizarGantt() {
         // Agrupar OTs por recinto
         const recintos = {};
         ots.forEach(ot => {
-            if (!recintos[ot.nombreRecinto]) {
-                recintos[ot.nombreRecinto] = [];
+            const recinto = ot.nombreRecinto || 'Sin recinto';
+            if (!recintos[recinto]) {
+                recintos[recinto] = [];
             }
-            recintos[ot.nombreRecinto].push(ot);
+            recintos[recinto].push(ot);
         });
         
         // Filas por recinto
@@ -119,63 +139,66 @@ function renderizarGantt() {
                 <small style="color: var(--text-secondary);">(${otsRecinto.length} OT)</small>
             </td>`;
             
-            // Celdas para cada columna de día
-            columnas.forEach(fecha => {
-                const esFinde = fecha.getDay() === 0 || fecha.getDay() === 6;
-                const clase = esFinde ? 'weekend' : '';
-                html += `<td class="${clase}" style="position: relative; min-height: 30px;">`;
+            // Una celda grande que contiene todas las barras
+            html += `<td colspan="${columnas.length}" style="position: relative; padding: 4px 0; min-height: 40px;">`;
+            
+            // Contenedor para las barras
+            otsRecinto.forEach(ot => {
+                const inicio = new Date(ot.fechaInicio);
+                const fin = new Date(ot.fechaFin);
                 
-                // Buscar OTs que estén activas en esta fecha
-                otsRecinto.forEach(ot => {
-                    const inicio = new Date(ot.fechaInicio);
-                    const fin = new Date(ot.fechaFin);
-                    const fechaActualFin = new Date(fecha);
-                    fechaActualFin.setDate(fechaActualFin.getDate() + zoomLevel - 1);
-                    
-                    if (inicio <= fechaActualFin && fin >= fecha) {
-                        // Calcular posición y ancho de la barra
-                        const duracionTotal = (maxFecha - minFecha) / (1000 * 60 * 60 * 24);
-                        const inicioOffset = (inicio - minFecha) / (1000 * 60 * 60 * 24);
-                        const duracionOT = (fin - inicio) / (1000 * 60 * 60 * 24) + 1;
-                        
-                        const leftPercent = (inicioOffset / columnas.length) * 100;
-                        const widthPercent = (duracionOT / columnas.length) * 100;
-                        
-                        const estadoClass = (ot.estado || 'sin-estado').toLowerCase().replace(/\s+/g, '-');
-                        const tooltip = `${ot.numeroOT} - ${ot.tipoIntervencion}<br>
-                            Inicio: ${ot.fechaInicio}<br>
-                            Fin: ${ot.fechaFin}<br>
-                            Estado: ${ot.estado}<br>
-                            Presupuesto: ${ot.presupuesto}`;
-                        
-                        html += `<div class="gantt-bar ${estadoClass}" 
-                            style="left: ${leftPercent}%; width: ${widthPercent}%;"
-                            onmouseover="mostrarTooltip(event, '${tooltip.replace(/'/g, "\\'")}')"
-                            onmouseout="ocultarTooltip()"
-                            onclick="mostrarDetalleOT('${ot.numeroOT}')">
-                            ${ot.numeroOT}
-                        </div>`;
-                    }
-                });
+                if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) return;
                 
-                html += '</td>';
+                const totalDias = (maxFecha - minFecha) / (1000 * 60 * 60 * 24);
+                const inicioOffset = (inicio - minFecha) / (1000 * 60 * 60 * 24);
+                const duracion = (fin - inicio) / (1000 * 60 * 60 * 24) + 1;
+                
+                const leftPercent = (inicioOffset / totalDias) * 100;
+                const widthPercent = (duracion / totalDias) * 100;
+                
+                const estadoClass = (ot.estado || 'sin-estado').toLowerCase()
+                    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                    .replace(/\s+/g, '-');
+                
+                const tooltipText = `OT #${ot.numeroOT} - ${ot.tipoIntervencion}\n` +
+                    `Inicio: ${ot.fechaInicio}\n` +
+                    `Fin: ${ot.fechaFin}\n` +
+                    `Estado: ${ot.estado}\n` +
+                    `Presupuesto: ${ot.presupuesto}`;
+                
+                html += `<div class="gantt-bar ${estadoClass}" 
+                    style="left: ${leftPercent}%; width: ${Math.max(widthPercent, 0.5)}%;"
+                    title="${tooltipText.replace(/"/g, '&quot;')}"
+                    data-ot='${JSON.stringify(ot).replace(/'/g, "&#39;")}'>
+                    ${ot.numeroOT}
+                </div>`;
             });
             
-            html += '</tr>';
+            html += '</td></tr>';
         });
     });
     
-    html += '</tbody></table>';
+    html += '</tbody></table></div>';
     
     // Agregar marcador de hoy
     const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
     if (hoy >= minFecha && hoy <= maxFecha) {
-        const hoyOffset = ((hoy - minFecha) / (1000 * 60 * 60 * 24));
-        const hoyPercent = (hoyOffset / columnas.length) * 100;
+        const hoyOffset = (hoy - minFecha) / (1000 * 60 * 60 * 24);
+        const totalDias = (maxFecha - minFecha) / (1000 * 60 * 60 * 24);
+        const hoyPercent = (hoyOffset / totalDias) * 100;
         html += `<div class="today-marker" style="left: ${hoyPercent}%"></div>`;
     }
     
     ganttChart.innerHTML = html;
+    
+    // Agregar event listeners a las barras
+    document.querySelectorAll('.gantt-bar').forEach(bar => {
+        bar.addEventListener('click', function() {
+            const otData = JSON.parse(this.getAttribute('data-ot'));
+            mostrarDetalleOT(otData);
+        });
+    });
 }
 
 // Zoom del Gantt
@@ -194,67 +217,23 @@ function scrollGantt(direction) {
     } else if (direction === 'right') {
         ganttChart.scrollLeft += scrollAmount;
     } else if (direction === 'today') {
-        // Encontrar la columna de hoy y hacer scroll hasta ella
-        const hoy = new Date();
-        // Implementación simplificada: scroll al centro
         ganttChart.scrollLeft = ganttChart.scrollWidth / 3;
     }
 }
 
-// Tooltip
-function mostrarTooltip(event, texto) {
-    let tooltip = document.getElementById('ganttTooltip');
-    if (!tooltip) {
-        tooltip = document.createElement('div');
-        tooltip.id = 'ganttTooltip';
-        tooltip.className = 'gantt-tooltip';
-        document.body.appendChild(tooltip);
-    }
-    
-    tooltip.innerHTML = texto.replace(/\n/g, '<br>');
-    tooltip.style.display = 'block';
-    tooltip.style.left = (event.pageX + 10) + 'px';
-    tooltip.style.top = (event.pageY - 10) + 'px';
-}
-
-function ocultarTooltip() {
-    const tooltip = document.getElementById('ganttTooltip');
-    if (tooltip) {
-        tooltip.style.display = 'none';
-    }
-}
-
 // Mostrar detalle de OT
-function mostrarDetalleOT(numeroOT) {
-    const ot = todasLasOTs.find(o => o.numeroOT === numeroOT);
-    if (ot) {
-        alert(`OT #${ot.numeroOT}\n\n` +
-              `Recinto: ${ot.nombreRecinto}\n` +
-              `Tipo: ${ot.tipoIntervencion}\n` +
-              `Estado: ${ot.estado}\n` +
-              `Inicio: ${ot.fechaInicio}\n` +
-              `Fin: ${ot.fechaFin}\n` +
-              `Presupuesto: ${ot.presupuesto}\n` +
-              `ITO: ${ot.ito}`);
-    }
-}
-
-// Cambiar vista
-function cambiarVista(vista) {
-    const ganttView = document.getElementById('ganttView');
-    const tarjetasView = document.getElementById('tarjetasView');
-    const botones = document.querySelectorAll('.view-btn');
+function mostrarDetalleOT(ot) {
+    if (!ot) return;
     
-    botones.forEach(btn => btn.classList.remove('active'));
+    const mensaje = `OT #${ot.numeroOT}\n\n` +
+        `Recinto: ${ot.nombreRecinto}\n` +
+        `Tipo: ${ot.tipoIntervencion}\n` +
+        `Estado: ${ot.estado}\n` +
+        `Inicio: ${ot.fechaInicio}\n` +
+        `Fin: ${ot.fechaFin}\n` +
+        `Presupuesto: ${ot.presupuesto}\n` +
+        `ITO: ${ot.ito}\n` +
+        `Línea: ${ot.lineaTrabajo}`;
     
-    if (vista === 'gantt') {
-        ganttView.style.display = 'block';
-        tarjetasView.style.display = 'none';
-        inicializarGantt();
-        document.querySelector('.view-btn:nth-child(1)').classList.add('active');
-    } else {
-        ganttView.style.display = 'none';
-        tarjetasView.style.display = 'block';
-        document.querySelector('.view-btn:nth-child(2)').classList.add('active');
-    }
+    alert(mensaje);
 }
