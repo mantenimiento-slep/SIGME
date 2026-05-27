@@ -1,67 +1,434 @@
-/* Selector de tema */
-.theme-selector {
-    margin-top: 1.5rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--border);
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
-.theme-selector label {
+:root {
+    --primary: #1a73e8;
+    --primary-dark: #1557b0;
+    --success: #0f9d58;
+    --warning: #f4b400;
+    --danger: #db4437;
+    --info: #4285f4;
+    --bg: #f8f9fa;
+    --card-bg: #ffffff;
+    --text: #202124;
+    --text-secondary: #5f6368;
+    --border: #dadce0;
+    --shadow: 0 2px 8px rgba(0,0,0,0.08);
+    --sidebar-width: 280px;
+}
+
+body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, #1a73e8 0%, #1557b0 100%);
+    color: white;
+    padding: 1rem 2rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.header-content {
+    max-width: 100%;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.header h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
     display: flex;
     align-items: center;
-    gap: 0.4rem;
+    gap: 0.5rem;
+}
+
+.header p {
+    opacity: 0.9;
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+}
+
+.header-stats {
+    display: flex;
+    gap: 1rem;
+}
+
+.stat-badge {
+    background: rgba(255,255,255,0.2);
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+/* Layout principal */
+.main-layout {
+    display: flex;
+    height: calc(100vh - 80px);
+    overflow: hidden;
+}
+
+/* Sidebar */
+.sidebar {
+    width: var(--sidebar-width);
+    background: white;
+    border-right: 1px solid var(--border);
+    padding: 1.5rem;
+    overflow-y: auto;
+    flex-shrink: 0;
+}
+
+.sidebar-header {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--primary);
+}
+
+.sidebar-header h3 {
+    color: var(--primary-dark);
+    font-size: 1.1rem;
+}
+
+.sidebar-section {
+    margin-bottom: 1.25rem;
+}
+
+.sidebar-section label {
+    display: block;
     font-size: 0.8rem;
     font-weight: 600;
     color: var(--text-secondary);
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.4rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
-.theme-selector label i {
-    color: #9C27B0;
-}
-
-.theme-selector select {
+.sidebar-section select,
+.sidebar-section input {
     width: 100%;
     padding: 0.6rem 0.75rem;
     border: 2px solid var(--border);
     border-radius: 8px;
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     transition: all 0.3s;
     background: white;
-    cursor: pointer;
 }
 
-.theme-selector select:focus {
+.sidebar-section select:focus,
+.sidebar-section input:focus {
     outline: none;
-    border-color: #9C27B0;
-    box-shadow: 0 0 0 3px rgba(156,39,176,0.1);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(26,115,232,0.1);
 }
 
-/* Preview de colores del tema */
-.theme-preview {
-    display: flex;
-    gap: 4px;
-    margin-top: 8px;
-    padding: 6px;
+.sidebar-actions {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+}
+
+.btn-reset {
+    width: 100%;
+    padding: 0.6rem;
     background: #f5f5f5;
-    border-radius: 6px;
-}
-
-.preview-bar {
-    flex: 1;
-    height: 12px;
-    border-radius: 3px;
-    transition: all 0.3s ease;
-}
-
-/* Estilos para las opciones del select */
-#themeSelect option {
-    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
     font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
 }
 
-/* Hover en el selector */
-#themeSelect:hover {
-    border-color: #9C27B0;
+.btn-reset:hover {
+    background: #e8e8e8;
+}
+
+.sidebar-footer {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+}
+
+.view-selector {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.view-btn {
+    flex: 1;
+    padding: 0.5rem;
+    border: 2px solid var(--border);
+    background: white;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    transition: all 0.3s;
+}
+
+.view-btn.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+/* Contenido */
+.content {
+    flex: 1;
+    overflow: hidden;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Gantt */
+.gantt-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.gantt-toolbar {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    background: #f8f9fa;
+    flex-shrink: 0;
+}
+
+.gantt-legend {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+}
+
+.legend-color {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+}
+
+.gantt-navigation {
+    display: flex;
+    gap: 0.4rem;
+}
+
+.gantt-navigation button {
+    padding: 0.4rem 0.6rem;
+    border: 1px solid var(--border);
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.gantt-navigation button:hover {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.gantt-chart {
+    flex: 1;
+    overflow: auto;
+    position: relative;
+    min-height: 0;
+}
+
+/* Tabla Gantt */
+.gantt-table {
+    border-collapse: collapse;
+    min-width: 1500px;
+}
+
+.gantt-table th,
+.gantt-table td {
+    border: 1px solid #e8e8e8;
+    padding: 0;
+    font-size: 0.75rem;
+}
+
+.gantt-table thead th {
+    background: #f8f9fa;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    padding: 4px;
+    text-align: center;
+}
+
+.gantt-table .col-recinto {
+    min-width: 180px;
+    position: sticky;
+    left: 0;
+    z-index: 5;
+    text-align: left;
+    padding: 8px;
+    font-weight: 500;
+    background: white;
+}
+
+.gantt-table thead .col-recinto {
+    z-index: 15;
+    background: #f8f9fa;
+}
+
+/* Barras cheurón (punta derecha) */
+.gantt-bar-chevron {
+    height: 26px;
+    display: flex;
+    align-items: center;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    min-width: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    font-family: 'Segoe UI', sans-serif;
+    position: absolute;
+    clip-path: polygon(0% 0%, calc(100% - 10px) 0%, 100% 50%, calc(100% - 10px) 100%, 0% 100%);
+    padding-left: 6px;
+    font-size: 0.75rem;
+}
+
+.gantt-bar-chevron:hover {
+    opacity: 0.95;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    z-index: 100;
+}
+
+/* Línea HOY */
+.today-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #ff0000;
+    z-index: 8;
+    pointer-events: none;
+    opacity: 0.8;
+}
+
+.today-line::before {
+    content: 'HOY';
+    position: absolute;
+    top: -22px;
+    left: -18px;
+    background: #ff0000;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+/* Scrollbars visibles */
+.gantt-chart::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+.gantt-chart::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 5px;
+}
+
+.gantt-chart::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 5px;
+}
+
+.gantt-chart::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Loading y errores */
+.loading {
+    text-align: center;
+    padding: 4rem;
+    color: var(--text-secondary);
+}
+
+.loading i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.error {
+    text-align: center;
+    padding: 2rem;
+    background: #fce8e6;
+    border-radius: 8px;
+    color: #c5221f;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    padding: 0.75rem;
+    background: white;
+    border-top: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .main-layout {
+        flex-direction: column;
+    }
+    
+    .sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        padding: 1rem;
+    }
+    
+    .gantt-container {
+        height: auto;
+    }
 }
