@@ -1,427 +1,116 @@
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIGME 2.0 - Desarrollo</title>
+    <link rel="stylesheet" href="styles-dev.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div>
+                <h1><i class="fas fa-school"></i> SIGME 2.0</h1>
+                <p>Sistema de Gestión del Mantenimiento Escolar</p>
+            </div>
+            <div class="header-stats">
+                <div class="stat-badge" id="totalOT">Cargando...</div>
+                <div class="stat-badge" id="totalRecintos">Cargando...</div>
+            </div>
+        </div>
+    </header>
 
-:root {
-    --primary: #1a73e8;
-    --primary-dark: #1557b0;
-    --success: #0f9d58;
-    --warning: #f4b400;
-    --danger: #db4437;
-    --info: #4285f4;
-    --bg: #f8f9fa;
-    --card-bg: #ffffff;
-    --text: #202124;
-    --text-secondary: #5f6368;
-    --border: #dadce0;
-    --shadow: 0 2px 8px rgba(0,0,0,0.08);
-    --sidebar-width: 240px;
-}
+    <main class="main-layout">
+        <!-- Panel izquierdo: Filtros -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h3><i class="fas fa-filter"></i> Filtros</h3>
+            </div>
+            
+            <div class="sidebar-section">
+                <label for="filterLinea">Línea de Trabajo</label>
+                <select id="filterLinea">
+                    <option value="">Todas las líneas</option>
+                </select>
+            </div>
+            
+            <div class="sidebar-section">
+                <label for="filterITO">ITO</label>
+                <select id="filterITO">
+                    <option value="">Todos los ITO</option>
+                </select>
+            </div>
+            
+            <div class="sidebar-section">
+                <label for="filterRecinto">Establecimiento</label>
+                <input type="text" id="filterRecinto" placeholder="Buscar recinto...">
+            </div>
+            
+            <div class="sidebar-section">
+                <label for="searchInput">Buscar OT</label>
+                <input type="text" id="searchInput" placeholder="N° OT o palabra clave...">
+            </div>
+            
+            <div class="sidebar-actions">
+                <button class="btn-reset" onclick="resetFiltros()">
+                    <i class="fas fa-undo"></i> Limpiar filtros
+                </button>
+            </div>
+            
+            <div class="sidebar-footer">
+                <div class="view-selector">
+                    <button class="view-btn active" onclick="cambiarVista('gantt')">
+                        <i class="fas fa-chart-gantt"></i> Gantt
+                    </button>
+                    <button class="view-btn" onclick="cambiarVista('tarjetas')">
+                        <i class="fas fa-th-large"></i> Tarjetas
+                    </button>
+                </div>
+            </div>
+        </aside>
 
-body {
-    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    line-height: 1.6;
-}
+        <!-- Panel derecho: Contenido -->
+        <section class="content">
+            <div id="loadingSpinner" class="loading">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Cargando programación de mantenimiento...</p>
+            </div>
 
-/* Header */
-.header {
-    background: linear-gradient(135deg, #1a73e8 0%, #1557b0 100%);
-    color: white;
-    padding: 0.75rem 2rem;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-}
+            <div id="errorMessage" class="error" style="display: none;">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p id="errorText"></p>
+            </div>
 
-.header-content {
-    max-width: 100%;
-    margin: 0 auto;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 1rem;
-}
+            <!-- Vista Gantt -->
+            <div id="ganttView" class="gantt-container" style="display: none;">
+                <div class="gantt-toolbar">
+                    <div class="gantt-legend">
+                        <span class="legend-item"><span class="legend-color" style="background: #5C9CE6;"></span> Programada</span>
+                        <span class="legend-item"><span class="legend-color" style="background: #F5A623;"></span> En Proceso</span>
+                        <span class="legend-item"><span class="legend-color" style="background: #5CB85C;"></span> Finalizada</span>
+                    </div>
+                    <div class="gantt-navigation">
+                        <button onclick="zoomGantt(-1)" title="Zoom out"><i class="fas fa-search-minus"></i></button>
+                        <button onclick="zoomGantt(1)" title="Zoom in"><i class="fas fa-search-plus"></i></button>
+                        <button onclick="scrollGantt('left')" title="Anterior"><i class="fas fa-chevron-left"></i></button>
+                        <button onclick="scrollGantt('today')" title="Hoy"><i class="fas fa-calendar-day"></i> Hoy</button>
+                        <button onclick="scrollGantt('right')" title="Siguiente"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                </div>
+                <div class="gantt-chart" id="ganttChart"></div>
+            </div>
 
-.header h1 {
-    font-size: 1.3rem;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
+            <!-- Vista Tarjetas -->
+            <div id="tarjetasView" style="display: none;"></div>
+        </section>
+    </main>
 
-.header p {
-    opacity: 0.9;
-    font-size: 0.75rem;
-    margin-top: 0.15rem;
-}
+    <footer class="footer">
+        <p>SIGME 2.0 - Desarrollo</p>
+    </footer>
 
-.header-stats {
-    display: flex;
-    gap: 0.75rem;
-}
-
-.stat-badge {
-    background: rgba(255,255,255,0.2);
-    padding: 0.3rem 0.7rem;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: 500;
-}
-
-/* Layout principal */
-.main-layout {
-    display: flex;
-    height: calc(100vh - 65px);
-    overflow: hidden;
-}
-
-/* Sidebar */
-.sidebar {
-    width: var(--sidebar-width);
-    background: white;
-    border-right: 1px solid var(--border);
-    padding: 1rem;
-    overflow-y: auto;
-    flex-shrink: 0;
-}
-
-.sidebar-header {
-    margin-bottom: 1rem;
-    padding-bottom: 0.75rem;
-    border-bottom: 2px solid var(--primary);
-}
-
-.sidebar-header h3 {
-    color: var(--primary-dark);
-    font-size: 0.95rem;
-}
-
-.sidebar-section {
-    margin-bottom: 0.75rem;
-}
-
-.sidebar-section label {
-    display: block;
-    font-size: 0.7rem;
-    font-weight: 600;
-    color: var(--text-secondary);
-    margin-bottom: 0.3rem;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-}
-
-.sidebar-section select,
-.sidebar-section input {
-    width: 100%;
-    padding: 0.45rem 0.5rem;
-    border: 1.5px solid var(--border);
-    border-radius: 6px;
-    font-size: 0.78rem;
-    transition: all 0.3s;
-    background: white;
-}
-
-.sidebar-section select:focus,
-.sidebar-section input:focus {
-    outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 2px rgba(26,115,232,0.1);
-}
-
-.sidebar-actions {
-    margin-top: 1rem;
-    padding-top: 0.75rem;
-    border-top: 1px solid var(--border);
-}
-
-.btn-reset {
-    width: 100%;
-    padding: 0.45rem;
-    background: #f5f5f5;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.78rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.4rem;
-    transition: all 0.2s;
-}
-
-.btn-reset:hover {
-    background: #e8e8e8;
-}
-
-.sidebar-footer {
-    margin-top: 1rem;
-    padding-top: 0.75rem;
-    border-top: 1px solid var(--border);
-}
-
-.view-selector {
-    display: flex;
-    gap: 0.4rem;
-}
-
-.view-btn {
-    flex: 1;
-    padding: 0.4rem;
-    border: 1.5px solid var(--border);
-    background: white;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.75rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.25rem;
-    transition: all 0.3s;
-}
-
-.view-btn.active {
-    background: var(--primary);
-    color: white;
-    border-color: var(--primary);
-}
-
-/* Contenido */
-.content {
-    flex: 1;
-    overflow: hidden;
-    padding: 0.75rem;
-    display: flex;
-    flex-direction: column;
-}
-
-/* Gantt */
-.gantt-container {
-    background: white;
-    border-radius: 10px;
-    box-shadow: var(--shadow);
-    overflow: hidden;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-}
-
-.gantt-toolbar {
-    padding: 0.5rem 0.75rem;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    background: #f8f9fa;
-    flex-shrink: 0;
-}
-
-.gantt-legend {
-    display: flex;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-}
-
-.legend-item {
-    display: flex;
-    align-items: center;
-    gap: 0.3rem;
-    font-size: 0.7rem;
-}
-
-.legend-color {
-    width: 12px;
-    height: 12px;
-    border-radius: 2px;
-}
-
-.gantt-navigation {
-    display: flex;
-    gap: 0.3rem;
-}
-
-.gantt-navigation button {
-    padding: 0.3rem 0.5rem;
-    border: 1px solid var(--border);
-    background: white;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 0.75rem;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    gap: 0.2rem;
-}
-
-.gantt-navigation button:hover {
-    background: var(--primary);
-    color: white;
-    border-color: var(--primary);
-}
-
-/* Contenedor del gráfico Gantt */
-.gantt-chart {
-    flex: 1;
-    overflow: auto !important;
-    position: relative;
-    min-height: 0;
-}
-
-/* Scrollbars siempre visibles */
-.gantt-chart::-webkit-scrollbar {
-    width: 10px !important;
-    height: 10px !important;
-}
-
-.gantt-chart::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 5px;
-}
-
-.gantt-chart::-webkit-scrollbar-thumb {
-    background: #888;
-    border-radius: 5px;
-}
-
-.gantt-chart::-webkit-scrollbar-thumb:hover {
-    background: #555;
-}
-
-.gantt-chart::-webkit-scrollbar-corner {
-    background: #f1f1f1;
-}
-
-/* Tabla Gantt */
-.gantt-table {
-    border-collapse: collapse;
-    min-width: 1500px;
-}
-
-.gantt-table th,
-.gantt-table td {
-    border: 1px solid #e8e8e8;
-    padding: 0;
-    font-size: 0.7rem;
-}
-
-.gantt-table thead th {
-    background: #f8f9fa;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    padding: 3px;
-    text-align: center;
-}
-
-.gantt-table .col-recinto {
-    min-width: 170px;
-    position: sticky;
-    left: 0;
-    z-index: 5;
-    text-align: left;
-    padding: 6px 8px;
-    font-weight: 500;
-    background: white;
-}
-
-.gantt-table thead .col-recinto {
-    z-index: 15;
-    background: #f8f9fa;
-}
-
-/* Barras cheurón */
-.gantt-bar-chevron {
-    height: 24px;
-    display: flex;
-    align-items: center;
-    color: white;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    min-width: 4px;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.15);
-    font-family: 'Segoe UI', sans-serif;
-    position: absolute;
-    border-radius: 3px 0 0 3px;
-    padding: 0 8px 0 6px;
-    font-size: 0.7rem;
-}
-
-/* Punta de flecha cheurón hacia la derecha */
-.gantt-bar-chevron::after {
-    content: '';
-    position: absolute;
-    right: -7px;
-    top: 0;
-    width: 0;
-    height: 0;
-    border-top: 12px solid transparent;
-    border-bottom: 12px solid transparent;
-    border-left: 7px solid;
-    border-left-color: inherit;
-}
-
-.gantt-bar-chevron:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 3px 8px rgba(0,0,0,0.25);
-    z-index: 100;
-}
-
-/* Loading y errores */
-.loading {
-    text-align: center;
-    padding: 3rem;
-    color: var(--text-secondary);
-}
-
-.loading i {
-    font-size: 2.5rem;
-    margin-bottom: 0.75rem;
-}
-
-.error {
-    text-align: center;
-    padding: 1.5rem;
-    background: #fce8e6;
-    border-radius: 8px;
-    color: #c5221f;
-}
-
-/* Footer */
-.footer {
-    text-align: center;
-    padding: 0.5rem;
-    background: white;
-    border-top: 1px solid var(--border);
-    color: var(--text-secondary);
-    font-size: 0.7rem;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-    .main-layout {
-        flex-direction: column;
-    }
-    
-    .sidebar {
-        width: 100%;
-        border-right: none;
-        border-bottom: 1px solid var(--border);
-        padding: 0.75rem;
-    }
-    
-    .gantt-container {
-        height: auto;
-        max-height: none;
-    }
-}
+    <script src="gantt-dev.js"></script>
+    <script src="app-dev.js"></script>
+</body>
+</html>
